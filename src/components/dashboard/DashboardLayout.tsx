@@ -3,7 +3,7 @@
 import React, { useState, useEffect, ReactNode, JSX } from "react";
 import Image from "next/image";
 import { ChevronsLeft, ChevronsRight, Menu, X } from "lucide-react";
-import Logo from "@/src/app/logo.jpg";
+import Logo from "@/app/logo.jpg";
 import SidebarNavigation from "./SidebarNavigation";
 import {
   getNavItems,

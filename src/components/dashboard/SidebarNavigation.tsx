@@ -1,6 +1,6 @@
-import React from 'react';
-import { useRouter } from 'next/router';
-import NavItem from './NavItem';
+import React from "react";
+import NavItem from "./NavItem";
+import { useRouter, usePathname } from "next/navigation";
 
 export interface NavigationItem {
   id: string;
@@ -19,50 +19,50 @@ interface SidebarNavigationProps {
 // Example navigation items - customize based on your needs
 const navigationItems: NavigationItem[] = [
   {
-    id: 'dashboard',
-    label: 'Dashboard',
-    href: '/dashboard',
+    id: "dashboard",
+    label: "Dashboard",
+    href: "/dashboard",
   },
   {
-    id: 'organizations',
-    label: 'Organizations',
-    href: '/dashboard/organizations',
+    id: "organizations",
+    label: "Organizations",
+    href: "/dashboard/organizations",
   },
   {
-    id: 'users',
-    label: 'Users',
-    href: '/dashboard/users',
+    id: "users",
+    label: "Users",
+    href: "/dashboard/users",
   },
   {
-    id: 'settings',
-    label: 'Settings',
-    href: '/dashboard/settings',
+    id: "settings",
+    label: "Settings",
+    href: "/dashboard/settings",
     children: [
       {
-        id: 'profile',
-        label: 'Profile',
-        href: '/dashboard/settings/profile',
+        id: "profile",
+        label: "Profile",
+        href: "/dashboard/settings/profile",
       },
       {
-        id: 'security',
-        label: 'Security',
-        href: '/dashboard/settings/security',
+        id: "security",
+        label: "Security",
+        href: "/dashboard/settings/security",
       },
     ],
   },
 ];
 
-const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ 
-  className = '',
-  onItemClick 
+const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
+  className = "",
+  onItemClick,
 }) => {
   const router = useRouter();
+  const pathname = usePathname(); // Get current pathname
 
   const handleItemClick = (item: NavigationItem) => {
     if (onItemClick) {
       onItemClick(item);
     }
-    
     if (item.href) {
       router.push(item.href);
     }
@@ -72,29 +72,25 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     <nav className={`h-full flex flex-col bg-white ${className}`}>
       {/* Logo/Brand */}
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">
-          Dashboard
-        </h1>
+        <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
       </div>
-      
+
       {/* Navigation Items */}
       <div className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         {navigationItems.map((item) => (
           <NavItem
             key={item.id}
             item={item}
-            // className="hover:bg-gray-100"
-            isActive={router.pathname === item.href}
+            // Use pathname instead of router.pathname
+            isActive={pathname === item.href}
             onClick={() => handleItemClick(item)}
           />
         ))}
       </div>
-      
+
       {/* Footer */}
       <div className="p-4 border-t border-gray-200">
-        <div className="text-sm text-gray-500">
-          © 2024 Your Company
-        </div>
+        <div className="text-sm text-gray-500">© 2024 Your Company</div>
       </div>
     </nav>
   );

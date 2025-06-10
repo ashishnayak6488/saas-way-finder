@@ -1,8 +1,16 @@
-'use client';
+"use client";
 
-import { Dialog } from '@headlessui/react';
+import { Dialog } from "@headlessui/react";
+import React from "react";
 
-export function CustomDialog({ isOpen, onClose, children }) {
+// Define props interface for the CustomDialog component
+interface CustomDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+export function CustomDialog({ isOpen, onClose, children }: CustomDialogProps) {
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />

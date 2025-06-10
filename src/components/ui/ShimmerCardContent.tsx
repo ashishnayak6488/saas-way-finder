@@ -1,6 +1,12 @@
-import { motion } from "framer-motion";
 
-const ShimmerCard = () => {
+import { motion } from "framer-motion";
+import React from "react";
+
+// Define props interface for ShimmerCard (currently no props, but added for extensibility)
+interface ShimmerCardProps {}
+
+// Define the ShimmerCard component
+const ShimmerCard: React.FC<ShimmerCardProps> = () => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -33,7 +39,11 @@ const ShimmerCard = () => {
   );
 };
 
-const ShimmerCardContent = () => {
+// Define props interface for ShimmerCardContent (currently no props, but added for extensibility)
+interface ShimmerCardContentProps {}
+
+// Define the ShimmerCardContent component
+const ShimmerCardContent: React.FC<ShimmerCardContentProps> = () => {
   return (
     <motion.div
       className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"

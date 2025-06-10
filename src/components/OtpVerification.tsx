@@ -1,65 +1,77 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Phone, CheckCircle, RefreshCw } from 'lucide-react';
-import { Button } from '@/src/components/ui/Button';
+import React, { useState, useEffect } from "react";
+import { Mail, Phone, CheckCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
 
-const OtpVerification = ({
-  type = 'email', // 'email' or 'phone'
-  value = '', // email address or phone number
-  phoneCountryCode = '', // country code for phone (only used when type is 'phone')
-  onVerified = () => { }, // callback when verification is successful
-  onCancel = () => { }, // callback when user cancels verification
-  isOptional = false // whether this verification is optional
+// Define the props interface for the OtpVerification component
+interface OtpVerificationProps {
+  type?: "email" | "phone"; // 'email' or 'phone'
+  value?: string; // email address or phone number
+  phoneCountryCode?: string; // country code for phone (only used when type is 'phone')
+  onVerified?: () => void; // callback when verification is successful
+  onCancel?: () => void; // callback when user cancels verification
+  isOptional?: boolean; // whether this verification is optional
+}
+
+const OtpVerification: React.FC<OtpVerificationProps> = ({
+  type = "email",
+  value = "",
+  phoneCountryCode = "",
+  onVerified = () => {},
+  onCancel = () => {},
+  isOptional = false,
 }) => {
-  const [otp, setOtp] = useState('');
-  const [isGeneratingOtp, setIsGeneratingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [verificationStep, setVerificationStep] = useState(false);
-  const [error, setError] = useState('');
-  const [remainingTime, setRemainingTime] = useState(0);
+  const [otp, setOtp] = useState<string>("");
+  const [isGeneratingOtp, setIsGeneratingOtp] = useState<boolean>(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState<boolean>(false);
+  const [verificationStep, setVerificationStep] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [remainingTime, setRemainingTime] = useState<number>(0);
 
   useEffect(() => {
-    let timer;
+    let timer: NodeJS.Timeout | undefined;
     if (remainingTime > 0) {
-      timer = setTimeout(() => setRemainingTime(prev => prev - 1), 1000);
+      timer = setTimeout(() => setRemainingTime((prev) => prev - 1), 1000);
     }
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer as NodeJS.Timeout);
   }, [remainingTime]);
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const handleGenerateOtp = async () => {
+  const handleGenerateOtp = async (): Promise<void> => {
     if (!value) {
       setError(`Please enter a valid ${type}`);
       return;
     }
 
     setIsGeneratingOtp(true);
-    setError('');
+    setError("");
     const toastId = toast.loading(`Sending OTP to your ${type}...`);
 
     try {
-      const endpoint = type === 'email'
-        ? '/api/otp_handling/send_email_otp'
-        : '/api/otp_handling/send_phone_otp';
+      const endpoint =
+        type === "email"
+          ? "/api/otp_handling/send_email_otp"
+          : "/api/otp_handling/send_phone_otp";
 
-      const payload = type === 'email'
-        ? { email: value }
-        : { phone_number: value, phone_country_code: phoneCountryCode };
+      const payload =
+        type === "email"
+          ? { email: value }
+          : { phone_number: value, phone_country_code: phoneCountryCode };
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const data: { message?: string } = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || `Failed to send OTP to ${type}`);
@@ -68,49 +80,50 @@ const OtpVerification = ({
       toast.success(`OTP sent to your ${type}`, { id: toastId });
       setVerificationStep(true);
       setRemainingTime(300); // 5 minutes countdown
-    } catch (error) {
-      // toast.error(error.message || `Failed to send OTP to ${type}`, { id: toastId });
-      setError(error.message || `Failed to send OTP to ${type}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : `Failed to send OTP to ${type}`;
+      setError(errorMessage);
     } finally {
       setIsGeneratingOtp(false);
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (): Promise<void> => {
     if (!otp.trim()) {
-      setError('Please enter the OTP');
+      setError("Please enter the OTP");
       return;
     }
 
     setIsVerifyingOtp(true);
-    setError('');
-    // const toastId = toast.loading(`Verifying ${type} OTP...`);
+    setError("");
 
     try {
-      const response = await fetch('/api/otp_handling/verify_otp', {
-        method: 'POST',
+      const response = await fetch("/api/otp_handling/verify_otp", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // identifier: type === 'email' ? value : `${phoneCountryCode}${value}`,
           identifier: value,
           otp: otp,
-          type: type
+          type: type,
         }),
       });
 
-      const data = await response.json();
+      const data: { message?: string } = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Invalid OTP');
+        throw new Error(data.message || "Invalid OTP");
       }
 
-      // toast.success(`${type === 'email' ? 'Email' : 'Phone'} verified successfully`, { id: toastId });
       onVerified();
-    } catch (error) {
-      // toast.error(error.message || "Failed to verify OTP", { id: toastId });
-      setError(error.message || "Failed to verify OTP");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to verify OTP";
+      setError(errorMessage);
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -120,21 +133,23 @@ const OtpVerification = ({
     <div className="bg-white p-5 rounded-lg border border-gray-200 mb-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
-          {type === 'email' ? (
+          {type === "email" ? (
             <Mail className="h-5 w-5 text-blue-500 mr-2" />
           ) : (
             <Phone className="h-5 w-5 text-blue-500 mr-2" />
           )}
           <h3 className="text-md font-medium">
-            {type === 'email' ? 'Email Verification' : 'Phone Verification'}
-            {isOptional && <span className="text-sm text-gray-500 ml-2">(Optional)</span>}
+            {type === "email" ? "Email Verification" : "Phone Verification"}
+            {isOptional && (
+              <span className="text-sm text-gray-500 ml-2">(Optional)</span>
+            )}
           </h3>
         </div>
 
         {isOptional && (
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onClick={onCancel}
           >
@@ -146,9 +161,9 @@ const OtpVerification = ({
       {!verificationStep ? (
         <div>
           <p className="text-sm text-gray-600 mb-4">
-            {type === 'email'
-              ? 'We need to verify your email address. Click the button below to receive a verification code.'
-              : 'We need to verify your phone number. Click the button below to receive a verification code.'}
+            {type === "email"
+              ? "We need to verify your email address. Click the button below to receive a verification code."
+              : "We need to verify your phone number. Click the button below to receive a verification code."}
           </p>
           <div className="flex items-center">
             <Button
@@ -159,7 +174,9 @@ const OtpVerification = ({
               onClick={handleGenerateOtp}
               className="flex items-center"
             >
-              {isGeneratingOtp ? 'Sending...' : `Send OTP to ${type === 'email' ? 'Email' : 'Phone'}`}
+              {isGeneratingOtp
+                ? "Sending..."
+                : `Send OTP to ${type === "email" ? "Email" : "Phone"}`}
             </Button>
           </div>
         </div>
@@ -173,9 +190,9 @@ const OtpVerification = ({
             <input
               type="text"
               value={otp}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setOtp(e.target.value);
-                setError('');
+                setError("");
               }}
               placeholder="Enter OTP"
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
@@ -192,7 +209,7 @@ const OtpVerification = ({
                 disabled={isVerifyingOtp || !otp}
                 onClick={handleVerifyOtp}
               >
-                {isVerifyingOtp ? 'Verifying...' : 'Verify OTP'}
+                {isVerifyingOtp ? "Verifying..." : "Verify OTP"}
               </Button>
 
               {remainingTime > 0 ? (
@@ -202,7 +219,7 @@ const OtpVerification = ({
               ) : (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   disabled={isGeneratingOtp}
                   onClick={handleGenerateOtp}

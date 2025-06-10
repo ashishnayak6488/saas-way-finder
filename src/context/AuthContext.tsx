@@ -18,6 +18,7 @@ interface User {
   id: string;
   username: string;
   email: string;
+  role_id: string;
   // Add any additional user fields here
 }
 
