@@ -36,10 +36,16 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
+  authChecked: boolean;
   login: (credentials: Credentials) => Promise<LoginResponse>;
   logout: () => Promise<boolean>;
   isPublicRoute: (path: string) => boolean;
   checkAuth: () => Promise<any>;
+  // Additional properties for internal use
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;
+  setAuthChecked: React.Dispatch<React.SetStateAction<boolean>>;
+  authCheckPromiseRef: React.MutableRefObject<Promise<any> | null>;
 }
 
 interface AuthProviderProps {
@@ -69,6 +75,7 @@ export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
 
   const isPublicRoute = (path: string): boolean => {
     const publicRoutes = [
+      "/",
       "/login",
       "/forgot-password",
       "/reset-password",
@@ -82,8 +89,14 @@ export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
   };
 
   const checkAuth = async (): Promise<any> => {
+    // If auth is already being checked, return the existing promise
     if (authCheckPromiseRef.current) {
       return authCheckPromiseRef.current;
+    }
+
+    // If auth has already been checked and we're not loading, don't check again
+    if (authChecked && !loading) {
+      return Promise.resolve({ isLoggedIn: isAuthenticated, user });
     }
 
     setLoading(true);
@@ -94,29 +107,53 @@ export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
       credentials: "include",
       cache: "no-store",
     })
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
-        if (data.isLoggedIn) {
+        if (data.isLoggedIn && data.user) {
           setIsAuthenticated(true);
-          setUser(data.user || null);
-          router.push("/dashboard");
+          setUser(data.user);
+
+          // Only redirect to dashboard if we're on a public route and authenticated
+          if (
+            isPublicRoute(pathname) &&
+            (pathname === "/" || pathname === "/login")
+          ) {
+            router.push("/dashboard");
+          }
         } else {
           setIsAuthenticated(false);
           setUser(null);
+
+          // Only redirect to login if we're on a protected route
           if (!isPublicRoute(pathname)) {
             router.push("/login");
           }
         }
+
+        setAuthChecked(true);
         return data;
       })
       .catch((error) => {
         console.error("Auth check error:", error);
         setIsAuthenticated(false);
         setUser(null);
-        return { isLoggedIn: false, error };
+        setAuthChecked(true);
+
+        // Only redirect to login if we're on a protected route
+        if (!isPublicRoute(pathname)) {
+          router.push("/login");
+        }
+
+        return { isLoggedIn: false, error: error.message };
       })
       .finally(() => {
         setLoading(false);
+        // Clear the promise reference after a short delay
         setTimeout(() => {
           authCheckPromiseRef.current = null;
         }, 300);
@@ -125,12 +162,29 @@ export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
     return authCheckPromiseRef.current;
   };
 
+  // Initial auth check on mount and pathname changes
   useEffect(() => {
-    checkAuth();
+    // Only run auth check if we haven't checked yet or if we're on a different route
+    if (!authChecked || (authChecked && !loading)) {
+      checkAuth();
+    }
   }, [pathname]);
+
+  // Initialize auth check on component mount
+  useEffect(() => {
+    // Check localStorage for quick initial state (optional optimization)
+    const storedAuth = localStorage.getItem("isAuthenticated");
+    if (storedAuth === "true" && !authChecked) {
+      checkAuth();
+    } else if (!authChecked) {
+      checkAuth();
+    }
+  }, []);
 
   const login = async (credentials: Credentials): Promise<LoginResponse> => {
     try {
+      setLoading(true);
+
       const urlEncodedData = new URLSearchParams();
       urlEncodedData.append("username", credentials.username);
       urlEncodedData.append("password", credentials.password);
@@ -144,58 +198,85 @@ export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
         credentials: "include",
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Login failed");
+        throw new Error(data.error || "Login failed");
       }
 
-      const data = await response.json();
+      // Update auth state
       setIsAuthenticated(true);
       setUser(data.user || null);
+      setAuthChecked(true);
       localStorage.setItem("isAuthenticated", "true");
+
+      // Clear any existing auth check promise
       authCheckPromiseRef.current = null;
 
+      showToast.success("Login successful!");
       return { success: true, redirect: "/dashboard" };
     } catch (error: any) {
-      showToast.error(error.message);
-      return { success: false, error: error.message };
+      console.error("Login error:", error);
+      showToast.error(error.message || "Login failed");
+      return { success: false, error: error.message || "Login failed" };
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async (): Promise<boolean> => {
     try {
-      await fetch("/api/logout", {
+      setLoading(true);
+
+      const response = await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
       });
 
+      // Clear local state regardless of API response
       localStorage.removeItem("isAuthenticated");
       setIsAuthenticated(false);
       setUser(null);
       setAuthChecked(false);
+      authCheckPromiseRef.current = null;
+
       router.push("/login");
+      showToast.success("Logged out successfully");
       return true;
     } catch (error) {
       console.error("Logout error:", error);
+
+      // Still clear local state even if API call fails
+      localStorage.removeItem("isAuthenticated");
+      setIsAuthenticated(false);
+      setUser(null);
+      setAuthChecked(false);
+      authCheckPromiseRef.current = null;
+
+      router.push("/login");
+      showToast.error("Logout completed with errors");
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
+  const contextValue: AuthContextType = {
+    user,
+    isAuthenticated,
+    loading,
+    authChecked,
+    login,
+    logout,
+    isPublicRoute,
+    checkAuth,
+    setUser,
+    setIsAuthenticated,
+    setAuthChecked,
+    authCheckPromiseRef,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        setUser,
-        isAuthenticated,
-        setIsAuthenticated,
-        login,
-        logout,
-        authChecked,
-        setAuthChecked,
-        authCheckPromiseRef,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };

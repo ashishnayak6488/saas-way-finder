@@ -127,7 +127,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <motion.div
-      className="w-full max-w-md mx-auto bg-gray-200 bg-blured-400 bg-opacity-20 rounded-lg shadow-md p-6 sm:p-8 border"
+      className="w-full max-w-md mx-auto bg-gray-200 bg-blured-400 bg-opacity-20 rounded-lg shadow-md p-6 sm:p-8 border border-white rounded-sm"
       {...scaleUp}
     >
       <h2 className="text-center text-xl font-bold text-gray-900 mb-6">
@@ -186,7 +186,7 @@ const LoginPage: React.FC = () => {
         <Button
           type="submit"
           variant="primary"
-          size="default"
+          size="sm"
           fullWidth={true}
           className="w-full"
           disabled={isLoading}

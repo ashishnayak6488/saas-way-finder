@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function LoadingSpinner() {
   const router = useRouter();
 
-  const handleLogin = () => {
+  const handleLogin = (): void => {
     router.push('/login');
   };
 
@@ -98,7 +98,7 @@ export default function LoadingSpinner() {
 
               {/* Animated dots */}
               <div className="absolute bottom-4 left-4 flex space-x-2">
-                {[0, 1, 2].map((i) => (
+                {[0, 1, 2].map((i: number) => (
                   <motion.div
                     key={i}
                     className="h-3 w-3 bg-white rounded-full"
