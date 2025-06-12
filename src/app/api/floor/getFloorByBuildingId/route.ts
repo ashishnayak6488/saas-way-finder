@@ -1,0 +1,90 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthToken } from "@/middleware";
+import { cookies } from "next/headers";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { buildingId: string } }
+) {
+  try {
+    const { buildingId } = params;
+
+    if (!buildingId) {
+      return NextResponse.json(
+        { message: "Building ID is required" },
+        { status: 400 }
+      );
+    }
+
+    let token = null;
+    try {
+      token = await getAuthToken(req);
+    } catch (error) {
+      console.error("Error getting auth token:", error);
+    }
+
+    if (!token) {
+      const cookieStore = cookies();
+      const cookieName = process.env.SESSION_COOKIE_NAME || "digital-signage";
+      token = (await cookieStore).get(cookieName)?.value;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/floor/building/${buildingId}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          Cookie: `${process.env.SESSION_COOKIE_NAME || "digital-signage"}=${token}`,
+        },
+        credentials: "include",
+        signal: controller.signal,
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    const responseText = await response.text();
+    let data;
+
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse response as JSON:", responseText);
+      data = { message: responseText || "Invalid response from server" };
+    }
+
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          message: data.message || data.detail || "Failed to fetch floors",
+          error: data,
+        },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error: unknown) {
+    console.error("API route error:", error);
+
+    if (error instanceof Error && error.name === "AbortError") {
+      return NextResponse.json(
+        { message: "Request timed out. Please try again." },
+        { status: 504 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : "Internal Server Error",
+      },
+      { status: 500 }
+    );
+  }
+}

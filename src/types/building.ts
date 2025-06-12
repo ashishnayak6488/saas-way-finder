@@ -1,18 +1,22 @@
 export interface Floor {
-  id: string;
+  floor_id: string; // Changed from 'id' to match backend
   label: string;
   order: number;
   imageUrl: string;
-  createdAt: string;
+  building_id: string; // Reference to parent building
+  datetime: number; // Unix timestamp
+  status: string;
 }
 
 export interface Building {
-  id: string;
+  building_id: string; // Changed from 'id' to match backend
   name: string;
   address: string;
   description: string;
   floors: Floor[];
-  createdAt: string;
+  created_by?: string;
+  datetime: number; // Unix timestamp
+  status: string;
 }
 
 export interface NewFloorData {

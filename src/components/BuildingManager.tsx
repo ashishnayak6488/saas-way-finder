@@ -1,420 +1,3 @@
-// "use client";
-
-// import React, { useState } from "react";
-// import {
-//   Plus,
-//   Building as BuildingIcon,
-//   Upload,
-//   Trash2,
-//   GripVertical,
-//   AlertTriangle,
-// } from "lucide-react";
-// import { Button } from "@/components/ui/Button";
-// import { Input } from "@/components/ui/Input";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogHeader,
-//   DialogTitle,
-//   DialogTrigger,
-//   DialogDescription,
-//   DialogFooter,
-// } from "@/components/ui/Dialog";
-// import { Label } from "@/components/ui/Label";
-// import { Alert, AlertDescription } from "@/components/ui/Alert";
-// import { Building, Floor } from "@/types/building";
-
-// interface BuildingManagerProps {
-//   buildings: Building[];
-//   selectedBuilding: Building | null;
-//   onBuildingSelect: (building: Building) => void;
-//   onBuildingCreate: (name: string) => void;
-//   onBuildingDelete: (buildingId: string) => void;
-//   onFloorAdd: (
-//     buildingId: string,
-//     floor: Omit<Floor, "id" | "createdAt">
-//   ) => void;
-//   onFloorDelete: (buildingId: string, floorId: string) => void;
-//   onFloorReorder: (buildingId: string, floors: Floor[]) => void;
-//   onExit: () => void;
-// }
-
-// export const BuildingManager: React.FC<BuildingManagerProps> = ({
-//   buildings,
-//   selectedBuilding,
-//   onBuildingSelect,
-//   onBuildingCreate,
-//   onBuildingDelete,
-//   onFloorAdd,
-//   onFloorDelete,
-//   onFloorReorder,
-//   onExit,
-// }) => {
-//   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false);
-//   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState<boolean>(false);
-//   const [isExitDialogOpen, setIsExitDialogOpen] = useState<boolean>(false);
-//   const [newBuildingName, setNewBuildingName] = useState<string>("");
-//   const [newFloorLabel, setNewFloorLabel] = useState<string>("");
-//   const [newFloorOrder, setNewFloorOrder] = useState<number>(1);
-//   const [newFloorImage, setNewFloorImage] = useState<string | null>(null);
-
-//   const handleCreateBuilding = () => {
-//     if (newBuildingName.trim()) {
-//       onBuildingCreate(newBuildingName.trim());
-//       setNewBuildingName("");
-//       setIsCreateDialogOpen(false);
-//     }
-//   };
-
-//   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = event.target.files?.[0];
-//     if (file) {
-//       const reader = new FileReader();
-//       reader.onload = (e: ProgressEvent<FileReader>) => {
-//         setNewFloorImage(e.target?.result as string);
-//       };
-//       reader.readAsDataURL(file);
-//     }
-//   };
-
-//   const handleAddFloor = () => {
-//     if (selectedBuilding && newFloorLabel.trim() && newFloorImage) {
-//       onFloorAdd(selectedBuilding.id, {
-//         label: newFloorLabel.trim(),
-//         order: newFloorOrder,
-//         imageUrl: newFloorImage,
-//       });
-//       setNewFloorLabel("");
-//       setNewFloorOrder(selectedBuilding.floors.length + 1);
-//       setNewFloorImage(null);
-//       setIsFloorDialogOpen(false);
-//     }
-//   };
-
-//   const canExit = () => {
-//     if (!selectedBuilding) return true;
-//     return selectedBuilding.floors.length > 0;
-//   };
-
-//   const handleExitAttempt = () => {
-//     if (canExit()) {
-//       onExit();
-//     } else {
-//       setIsExitDialogOpen(true);
-//     }
-//   };
-
-//   const handleForceExit = () => {
-//     setIsExitDialogOpen(false);
-//     onExit();
-//   };
-
-//   return (
-//     <div className="space-y-6">
-//       {/* Building List */}
-//       <Card>
-//         <CardHeader>
-//           <div className="flex items-center justify-between">
-//             <CardTitle className="flex items-center space-x-2">
-//               <BuildingIcon className="h-5 w-5" />
-//               <span>Buildings</span>
-//             </CardTitle>
-//             <Dialog
-//               open={isCreateDialogOpen}
-//               onOpenChange={setIsCreateDialogOpen}
-//             >
-//               <DialogTrigger asChild>
-//                 <Button>
-//                   <Plus className="h-4 w-4 mr-2" />
-//                   New Building
-//                 </Button>
-//               </DialogTrigger>
-//               <DialogContent>
-//                 <DialogHeader>
-//                   <DialogTitle>Create New Building</DialogTitle>
-//                 </DialogHeader>
-//                 <div className="space-y-4">
-//                   <div>
-//                     <Label
-//                       htmlFor="building-name"
-//                       className="block mb-2 text-sm font-medium text-gray-700"
-//                     >
-//                       Building Name
-//                     </Label>
-//                     <Input
-//                       id="building-name"
-//                       placeholder="e.g., Main Office Building"
-//                       value={newBuildingName}
-//                       onChange={(e) => setNewBuildingName(e.target.value)}
-//                     />
-//                   </div>
-//                 </div>
-//                 <div className="flex justify-end space-x-2">
-//                   <Button
-//                     variant="outline"
-//                     onClick={() => setIsCreateDialogOpen(false)}
-//                     // className=""
-//                   >
-//                     Cancel
-//                   </Button>
-//                   <Button
-//                     onClick={handleCreateBuilding}
-//                     disabled={!newBuildingName.trim()}
-//                     // className="hover:bg-gray-400"
-//                   >
-//                     Create
-//                   </Button>
-//                 </div>
-//               </DialogContent>
-//             </Dialog>
-//           </div>
-//         </CardHeader>
-//         <CardContent>
-//           {buildings.length === 0 ? (
-//             <div className="text-center text-gray-500 py-8">
-//               No buildings created yet. Create your first building to get
-//               started.
-//             </div>
-//           ) : (
-//             <div className="grid gap-3">
-//               {buildings.map((building) => (
-//                 <div
-//                   key={building.id}
-//                   className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-//                     selectedBuilding?.id === building.id
-//                       ? "border-blue-500 bg-blue-50"
-//                       : "border-gray-200 hover:border-gray-300"
-//                   }`}
-//                   onClick={() => onBuildingSelect(building)}
-//                 >
-//                   <div className="flex items-center justify-between">
-//                     <div>
-//                       <h3 className="font-medium">{building.name}</h3>
-//                       <p className="text-sm text-gray-500">
-//                         {building.floors.length} floors
-//                       </p>
-//                     </div>
-//                     <Button
-//                       variant="ghost"
-//                       size="sm"
-//                       onClick={(e) => {
-//                         e.stopPropagation();
-//                         onBuildingDelete(building.id);
-//                       }}
-//                       className="text-red-600 hover:text-red-700"
-//                     >
-//                       <Trash2 className="h-4 w-4" />
-//                     </Button>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           )}
-//         </CardContent>
-//       </Card>
-
-//       {/* Floor Management */}
-//       {selectedBuilding && (
-//         <Card>
-//           <CardHeader>
-//             <div className="flex items-center justify-between">
-//               <CardTitle>Floors - {selectedBuilding.name}</CardTitle>
-//               <Dialog
-//                 open={isFloorDialogOpen}
-//                 onOpenChange={setIsFloorDialogOpen}
-//               >
-//                 <DialogTrigger asChild>
-//                   <Button>
-//                     <Plus className="h-4 w-4 mr-2" />
-//                     Add Floor
-//                   </Button>
-//                 </DialogTrigger>
-//                 <DialogContent>
-//                   <DialogHeader>
-//                     <DialogTitle>Add New Floor</DialogTitle>
-//                   </DialogHeader>
-//                   <div className="space-y-4">
-//                     <div>
-//                       <Label
-//                         htmlFor="floor-label"
-//                         className="block mb-2 text-sm font-medium text-gray-700"
-//                       >
-//                         Floor Label
-//                       </Label>
-//                       <Input
-//                         id="floor-label"
-//                         placeholder="e.g., Ground Floor, Floor 1, Basement"
-//                         value={newFloorLabel}
-//                         onChange={(e) => setNewFloorLabel(e.target.value)}
-//                       />
-//                     </div>
-//                     <div>
-//                       <Label
-//                         htmlFor="floor-order"
-//                         className="block mb-2 text-sm font-medium text-gray-700"
-//                       >
-//                         Floor Order
-//                       </Label>
-//                       <Input
-//                         id="floor-order"
-//                         type="number"
-//                         value={newFloorOrder}
-//                         onChange={(e) =>
-//                           setNewFloorOrder(parseInt(e.target.value, 10) || 1)
-//                         }
-//                       />
-//                     </div>
-//                     <div>
-//                       <Label
-//                         htmlFor="floor-image"
-//                         className="block mb-2 text-sm font-medium text-gray-700"
-//                       >
-//                         Floor Plan Image
-//                       </Label>
-//                       <input
-//                         className="block w-full text-sm text-gray-500
-//                         file:mr-4 file:py-3 file:px-4
-//                         file:rounded-lg file:border-0
-//                         file:text-sm file:font-semibold
-//                         file:bg-blue-50 file:text-blue-700
-//                         hover:file:bg-blue-100 border border-gray-300
-//                         focus:outline-none focus:ring-1 focus:ring-blue-500
-//                         focus:border-blue-500 rounded-lg"
-//                         id="floor-image"
-//                         type="file"
-//                         accept="image/*"
-//                         onChange={handleImageUpload}
-//                       />
-//                       {newFloorImage && (
-//                         <div className="mt-2">
-//                           <img
-//                             src={newFloorImage}
-//                             alt="Floor preview"
-//                             className="w-full h-32 object-cover rounded border"
-//                           />
-//                         </div>
-//                       )}
-//                     </div>
-//                   </div>
-//                   <div className="flex justify-end space-x-2">
-//                     <Button
-//                       variant="outline"
-//                       onClick={() => setIsFloorDialogOpen(false)}
-//                     >
-//                       Cancel
-//                     </Button>
-//                     <Button
-//                       onClick={handleAddFloor}
-//                       disabled={!newFloorLabel.trim() || !newFloorImage}
-//                     >
-//                       Add Floor
-//                     </Button>
-//                   </div>
-//                 </DialogContent>
-//               </Dialog>
-//             </div>
-//           </CardHeader>
-//           <CardContent>
-//             {!canExit() && (
-//               <Alert className="mb-4">
-//                 <AlertTriangle className="h-4 w-4" />
-//                 <AlertDescription>
-//                   Please add at least one floor plan before exiting building
-//                   management.
-//                 </AlertDescription>
-//               </Alert>
-//             )}
-
-//             {selectedBuilding.floors.length === 0 ? (
-//               <div className="text-center text-gray-500 py-8">
-//                 No floors added yet. Add your first floor plan to get started.
-//               </div>
-//             ) : (
-//               <div className="space-y-2">
-//                 {selectedBuilding.floors
-//                   .sort((a, b) => b.order - a.order)
-//                   .map((floor) => (
-//                     <div
-//                       key={floor.id}
-//                       className="flex items-center justify-between p-3 border rounded-lg"
-//                     >
-//                       <div className="flex items-center space-x-3">
-//                         <GripVertical className="h-4 w-4 text-gray-400" />
-//                         <div className="w-12 h-12 rounded border overflow-hidden">
-//                           <img
-//                             src={floor.imageUrl}
-//                             alt={floor.label}
-//                             className="w-full h-full object-cover"
-//                           />
-//                         </div>
-//                         <div>
-//                           <div className="font-medium">{floor.label}</div>
-//                           <div className="text-sm text-gray-500">
-//                             Order: {floor.order}
-//                           </div>
-//                         </div>
-//                       </div>
-//                       <Button
-//                         variant="ghost"
-//                         size="sm"
-//                         onClick={() =>
-//                           onFloorDelete(selectedBuilding.id, floor.id)
-//                         }
-//                         className="text-red-600 hover:text-red-700"
-//                       >
-//                         <Trash2 className="h-4 w-4" />
-//                       </Button>
-//                     </div>
-//                   ))}
-//               </div>
-//             )}
-//           </CardContent>
-//         </Card>
-//       )}
-
-//       {/* Exit Button */}
-//       <div className="flex justify-center mt-4 mb-4 pb-4">
-//         <Button
-//           onClick={handleExitAttempt}
-//           variant={canExit() ? "default" : "outline"}
-//           className={!canExit() ? "border-orange-300 text-orange-600" : ""}
-//         >
-//           {canExit() ? "Done" : "Exit (Incomplete)"}
-//         </Button>
-//       </div>
-
-//       {/* Exit Confirmation Dialog */}
-//       <Dialog open={isExitDialogOpen} onOpenChange={setIsExitDialogOpen}>
-//         <DialogContent>
-//           <DialogHeader>
-//             <DialogTitle className="flex items-center gap-2">
-//               <AlertTriangle className="h-5 w-5 text-orange-500" />
-//               Exit Without Complete Setup?
-//             </DialogTitle>
-//             <DialogDescription>
-//               The selected building "{selectedBuilding?.name}" doesn't have any
-//               floor plans yet. Are you sure you want to exit building management
-//               without adding floors?
-//             </DialogDescription>
-//           </DialogHeader>
-//           <DialogFooter>
-//             <Button
-//               variant="outline"
-//               onClick={() => setIsExitDialogOpen(false)}
-//             >
-//               Continue Setup
-//             </Button>
-//             <Button variant="destructive" onClick={handleForceExit}>
-//               Exit Anyway
-//             </Button>
-//           </DialogFooter>
-//         </DialogContent>
-//       </Dialog>
-//     </div>
-//   );
-// };
-
 "use client";
 
 import React, { useState } from "react";
@@ -433,6 +16,8 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import ConfirmationModal from "@/components/ConfirmationModal";
+
 import {
   Dialog,
   DialogContent,
@@ -450,29 +35,25 @@ interface BuildingManagerProps {
   buildings: Building[];
   selectedBuilding: Building | null;
   onBuildingSelect: (building: Building) => void;
-  onBuildingCreate: (
-    name: string,
-    address: string,
-    description: string
-  ) => void;
+  onBuildingCreate: (name: string, address: string, description: string) => void; // Updated signature
+  onBuildingUpdate: (buildingId: string, updates: { name?: string; address?: string; description?: string }) => void;
   onBuildingDelete: (buildingId: string) => void;
-  onBuildingUpdate: (
-    buildingId: string,
-    updates: { name?: string; address?: string; description?: string }
-  ) => void;
   onFloorAdd: (
     buildingId: string,
-    floor: Omit<Floor, "id" | "createdAt">
+    floor: Omit<Floor, "floor_id" | "datetime" | "status" | "building_id">
   ) => void;
-  onFloorDelete: (buildingId: string, floorId: string) => void;
-  onFloorReorder: (buildingId: string, floors: Floor[]) => void;
   onFloorUpdate: (
     buildingId: string,
     floorId: string,
     updates: { label?: string; order?: number; imageUrl?: string }
   ) => void;
+  onFloorDelete: (buildingId: string, floorId: string) => void;
+  onFloorReorder: (buildingId: string, floors: Floor[]) => void;
   onExit: () => void;
 }
+
+// Update all references from .id to .building_id and .floor_id throughout the component
+
 
 export const BuildingManager: React.FC<BuildingManagerProps> = ({
   buildings,
@@ -524,6 +105,13 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
   const [editFloorImage, setEditFloorImage] = useState<string | null>(null);
   const [editFloorBuildingId, setEditFloorBuildingId] = useState<string>("");
 
+  // Add state for confirmation modal in BuildingManager component
+const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<boolean>(false);
+const [buildingToDelete, setBuildingToDelete] = useState<Building | null>(null);
+// Add additional state for floor deletion confirmation
+const [showFloorDeleteConfirmation, setShowFloorDeleteConfirmation] = useState<boolean>(false);
+const [floorToDelete, setFloorToDelete] = useState<{ floor: Floor; buildingId: string } | null>(null);
+
   const handleCreateBuilding = () => {
     if (newBuildingName.trim()) {
       onBuildingCreate(
@@ -549,7 +137,7 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
 
   const handleUpdateBuilding = () => {
     if (editBuildingData && editBuildingName.trim()) {
-      onBuildingUpdate(editBuildingData.id, {
+      onBuildingUpdate(editBuildingData.building_id, {
         name: editBuildingName.trim(),
         address: editBuildingAddress.trim(),
         description: editBuildingDescription.trim(),
@@ -561,7 +149,7 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
 
   const handleEditFloor = (building: Building, floor: Floor) => {
     setEditFloorData(floor);
-    setEditFloorBuildingId(building.id);
+    setEditFloorBuildingId(building.building_id);
     setEditFloorLabel(floor.label);
     setEditFloorOrder(floor.order);
     setEditFloorImage(floor.imageUrl);
@@ -575,7 +163,7 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
       editFloorLabel.trim() &&
       editFloorImage
     ) {
-      onFloorUpdate(editFloorBuildingId, editFloorData.id, {
+      onFloorUpdate(editFloorBuildingId, editFloorData.floor_id, {
         label: editFloorLabel.trim(),
         order: editFloorOrder,
         imageUrl: editFloorImage,
@@ -585,17 +173,6 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
       setEditFloorBuildingId("");
     }
   };
-
-  // const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = event.target.files?.[0];
-  //   if (file) {
-  //     const reader = new FileReader();
-  //     reader.onload = (e: ProgressEvent<FileReader>) => {
-  //       setNewFloorImage(e.target?.result as string);
-  //     };
-  //     reader.readAsDataURL(file);
-  //   }
-  // };
 
   // Update the existing handleImageUpload function
   const handleImageUpload = (
@@ -618,7 +195,7 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
 
   const handleAddFloor = () => {
     if (currentBuildingForFloor && newFloorLabel.trim() && newFloorImage) {
-      onFloorAdd(currentBuildingForFloor.id, {
+      onFloorAdd(currentBuildingForFloor.building_id, {
         label: newFloorLabel.trim(),
         order: newFloorOrder,
         imageUrl: newFloorImage,
@@ -646,6 +223,49 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
     setNewFloorOrder(building.floors.length + 1);
     setIsFloorDialogOpen(true);
   };
+
+
+  // Add confirmation handler function
+const handleDeleteClick = (building: Building) => {
+  setBuildingToDelete(building);
+  setShowDeleteConfirmation(true);
+};
+
+const handleConfirmDelete = () => {
+  if (buildingToDelete) {
+    onBuildingDelete(buildingToDelete.building_id);
+    setShowDeleteConfirmation(false);
+    setBuildingToDelete(null);
+  }
+};
+
+const handleCancelDelete = () => {
+  setShowDeleteConfirmation(false);
+  setBuildingToDelete(null);
+};
+
+
+
+// Add floor delete confirmation handlers
+const handleFloorDeleteClick = (building: Building, floor: Floor) => {
+  setFloorToDelete({ floor, buildingId: building.building_id });
+  setShowFloorDeleteConfirmation(true);
+};
+
+const handleConfirmFloorDelete = () => {
+  if (floorToDelete) {
+    onFloorDelete(floorToDelete.buildingId, floorToDelete.floor.floor_id);
+    setShowFloorDeleteConfirmation(false);
+    setFloorToDelete(null);
+  }
+};
+
+const handleCancelFloorDelete = () => {
+  setShowFloorDeleteConfirmation(false);
+  setFloorToDelete(null);
+};
+
+
 
   return (
     <div className="space-y-6">
@@ -806,14 +426,14 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
       ) : (
         <div className="space-y-4">
           {buildings.map((building) => (
-            <Card key={building.id} className="overflow-hidden">
+            <Card key={building.building_id} className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div
                     className="flex items-center space-x-3 cursor-pointer flex-1"
-                    onClick={() => toggleBuildingExpansion(building.id)}
+                    onClick={() => toggleBuildingExpansion(building.building_id)}
                   >
-                    {/* {expandedBuildings.has(building.id) ? (
+                    {/* {expandedBuildings.has(building.building_id) ? (
                       <ChevronDown className="h-5 w-5 text-gray-400" />
                     ) : (
                       <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -840,13 +460,13 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
                         <span>{building.floors.length} floors</span>
                         <span>
                           Created{" "}
-                          {new Date(building.createdAt).toLocaleDateString()}
+                          {new Date(building.datetime).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
-                    {expandedBuildings.has(building.id) && (
+                    {expandedBuildings.has(building.building_id) && (
                       <Button
                         // size="sm"
                         onClick={(e) => {
@@ -880,7 +500,8 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
                         // size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onBuildingDelete(building.id);
+                          // onBuildingDelete(building.building_id);
+                          handleDeleteClick(building);
                         }}
                         className="text-red-600 hover:text-red-700"
                       >
@@ -895,7 +516,7 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
               </CardHeader>
 
               {/* Floors Section - Only show when expanded */}
-              {expandedBuildings.has(building.id) && (
+              {expandedBuildings.has(building.building_id) && (
                 <CardContent className="pt-0">
                   <div className="border-t pt-4">
                     <h4 className="font-medium text-gray-900 mb-3">
@@ -914,7 +535,7 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
                           .sort((a, b) => a.order - b.order)
                           .map((floor) => (
                             <div
-                              key={floor.id}
+                              key={floor.floor_id}
                               className="border rounded-lg p-3 hover:border-blue-300 transition-colors"
                             >
                               <div className="flex items-center justify-between mb-2">
@@ -943,7 +564,8 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() =>
-                                      onFloorDelete(building.id, floor.id)
+                                      // onFloorDelete(building.building_id, floor.floor_id)
+                                      handleFloorDeleteClick(building, floor)
                                     }
                                     className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
                                   >
@@ -1149,6 +771,24 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+
+      {showDeleteConfirmation && buildingToDelete && (
+        <ConfirmationModal
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          message={`Are you sure you want to delete "${buildingToDelete.name}"? This action will also delete all floors associated with this building and cannot be undone.`}
+        />
+      )}
+
+      {/* // Add the floor delete confirmation modal */}
+      {showFloorDeleteConfirmation && floorToDelete && (
+        <ConfirmationModal
+          onClose={handleCancelFloorDelete}
+          onConfirm={handleConfirmFloorDelete}
+          message={`Are you sure you want to delete floor "${floorToDelete.floor.label}"? This action cannot be undone.`}
+        />
+      )}
     </div>
   );
 };
