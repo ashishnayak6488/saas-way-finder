@@ -64,28 +64,7 @@ export const createBuilding = async (name: string, address: string, description:
   }
 };
 
-// export const loadBuildingsFromAPI = async (): Promise<Building[]> => {
-//   try {
-//     const response = await fetch("/api/building/getAllBuildings", {
-//       method: "GET",
-//       credentials: "include",
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       console.error("Failed to fetch buildings:", data.message);
-//       return [];
-//     }
-
-//     return data.data || [];
-//   } catch (error) {
-//     console.error("Error fetching buildings:", error);
-//     return [];
-//   }
-// };
-
-
+// Update the loadBuildingsFromAPI function to include floors
 export const loadBuildingsFromAPI = async (
   statusFilter: string = 'active',
   skip: number = 0,
@@ -115,13 +94,33 @@ export const loadBuildingsFromAPI = async (
       return [];
     }
 
-    return data.data || [];
+    const buildings = data.data || [];
+
+    // Fetch floors for each building
+    const buildingsWithFloors = await Promise.all(
+      buildings.map(async (building: Building) => {
+        try {
+          const floors = await getFloorsByBuildingId(building.building_id);
+          return {
+            ...building,
+            floors: floors
+          };
+        } catch (error) {
+          console.error(`Error fetching floors for building ${building.building_id}:`, error);
+          return {
+            ...building,
+            floors: []
+          };
+        }
+      })
+    );
+
+    return buildingsWithFloors;
   } catch (error) {
     console.error("Error fetching buildings:", error);
     return [];
   }
 };
-
 
 export const loadBuildingsFromStorage = loadBuildingsFromAPI;
 
@@ -171,7 +170,45 @@ export const createVerticalConnector = (
   };
 };
 
-// Floor API Functions
+// // Floor API Functions
+// export const addFloorToBuilding = async (
+//   buildingId: string,
+//   floor: Omit<Floor, "floor_id" | "datetime" | "status" | "building_id">
+// ): Promise<Floor | null> => {
+//   try {
+//     const response = await fetch("/api/floor/createFloor", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         building_id: buildingId,
+//         label: floor.label,
+//         order: floor.order,
+//         imageUrl: floor.imageUrl,
+//       }),
+//       credentials: "include",
+//     });
+
+//     const data = await response.json();
+
+//     if (!response.ok) {
+//       toast.error(data.message || "Failed to add floor");
+//       return null;
+//     }
+
+//     toast.success("Floor added successfully");
+//     return data.data;
+//   } catch (error) {
+//     console.error("Error adding floor:", error);
+//     toast.error("Failed to add floor");
+//     return null;
+//   }
+// };
+
+
+
+// Update the addFloorToBuilding function
 export const addFloorToBuilding = async (
   buildingId: string,
   floor: Omit<Floor, "floor_id" | "datetime" | "status" | "building_id">
@@ -207,6 +244,47 @@ export const addFloorToBuilding = async (
   }
 };
 
+
+
+// export const removeFloorFromBuilding = async (
+
+//   buildingId: string,
+//   floorId: string
+// ): Promise<boolean> => {
+//   try {
+//     const response = await fetch("/api/floor/deleteFloor", {
+//       method: "DELETE",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         floor_id: floorId,
+//         building_id: buildingId,
+//       }),
+//       credentials: "include",
+//     });
+
+//     const data = await response.json();
+
+//     if (!response.ok) {
+//       toast.error(data.message || "Failed to delete floor");
+//       return false;
+//     }
+
+//     toast.success("Floor deleted successfully");
+//     return true;
+//   } catch (error) {
+//     console.error("Error deleting floor:", error);
+//     toast.error("Failed to delete floor");
+//     return false;
+//   }
+// };
+
+
+
+// The removeFloorFromBuilding function looks correct, just ensure it uses the right endpoint
+
+
 export const removeFloorFromBuilding = async (
   buildingId: string,
   floorId: string
@@ -239,6 +317,7 @@ export const removeFloorFromBuilding = async (
     return false;
   }
 };
+
 
 export const reorderFloorsInBuilding = async (
   buildingId: string,
@@ -393,28 +472,44 @@ export const updateBuilding = async (
   }
 };
 
+
 export const updateFloorInBuilding = async (
   buildingId: string,
   floorId: string,
-  updates: { label?: string; order?: number; imageUrl?: string }
+  updates: { label?: string; order?: number; imageUrl?: string; description?: string; status?: string }
 ): Promise<Floor | null> => {
   try {
+    // Validate required fields
+    if (updates.label === undefined || updates.order === undefined) {
+      toast.error("Floor name and floor number are required");
+      return null;
+    }
+
+    const requestBody = {
+      floor_id: floorId,
+      building_id: buildingId,
+      label: updates.label,
+      order: updates.order,
+      imageUrl: updates.imageUrl,
+      description: updates.description,
+      status: updates.status || "active"
+    };
+
+    console.log("Sending update request:", requestBody);
+
     const response = await fetch("/api/floor/updateFloor", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        floor_id: floorId,
-        building_id: buildingId,
-        ...updates,
-      }),
+      body: JSON.stringify(requestBody),
       credentials: "include",
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      console.error("Update floor error:", data);
       toast.error(data.message || "Failed to update floor");
       return null;
     }
@@ -428,12 +523,6 @@ export const updateFloorInBuilding = async (
   }
 };
 
-
-
-
-
-
-// Utility Functions
 export const getBuildingById = async (buildingId: string): Promise<Building | null> => {
   try {
     const response = await fetch(`/api/building/getBuilding/${buildingId}`, {
@@ -455,12 +544,82 @@ export const getBuildingById = async (buildingId: string): Promise<Building | nu
   }
 };
 
-export const getFloorsByBuildingId = async (buildingId: string): Promise<Floor[]> => {
+
+
+
+// Add this function to fetch floors by building ID
+// export const getFloorsByBuildingId = async (
+//   buildingId: string,
+//   statusFilter: string = 'active',
+//   includeLocationsCount: boolean = true,
+//   limit?: number,
+//   skip: number = 0
+// ): Promise<Floor[]> => {
+//   try {
+//     const queryParams = new URLSearchParams({
+//       status_filter: statusFilter,
+//       include_locations_count: includeLocationsCount.toString(),
+//       skip: skip.toString(),
+//     });
+
+//     if (limit) {
+//       queryParams.append('limit', limit.toString());
+//     }
+
+//     console.log("Building ID in function:", buildingId);
+
+//     const response = await fetch(
+//       `/api/floor/getFloorByBuildingId/${buildingId}?${queryParams.toString()}`,
+//       {
+//         method: "GET",
+//         credentials: "include",
+//       }
+//     );
+
+//     const data = await response.json();
+
+//     if (!response.ok) {
+//       console.error("Failed to fetch floors:", data.message);
+//       return [];
+//     }
+
+//     return data.data?.floors || [];
+//   } catch (error) {
+//     console.error("Error fetching floors:", error);
+//     return [];
+//   }
+// };
+
+
+
+export const getFloorsByBuildingId = async (
+  buildingId: string,
+  statusFilter: string = 'active',
+  includeLocationsCount: boolean = true,
+  limit?: number,
+  skip: number = 0
+): Promise<Floor[]> => {
   try {
-    const response = await fetch(`/api/floor/getFloorsByBuilding/${buildingId}`, {
-      method: "GET",
-      credentials: "include",
+    const queryParams = new URLSearchParams({
+      buildingId: buildingId, // Add buildingId as query parameter
+      status_filter: statusFilter,
+      include_locations_count: includeLocationsCount.toString(),
+      skip: skip.toString(),
     });
+
+    if (limit) {
+      queryParams.append('limit', limit.toString());
+    }
+
+    console.log("Building ID in function:", buildingId);
+
+    const response = await fetch(
+      `/api/floor/getFloorByBuildingId?${queryParams.toString()}`, // Remove buildingId from path
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
 
     const data = await response.json();
 
@@ -469,16 +628,12 @@ export const getFloorsByBuildingId = async (buildingId: string): Promise<Floor[]
       return [];
     }
 
-    return data.data || [];
+    return data.data?.floors || [];
   } catch (error) {
     console.error("Error fetching floors:", error);
     return [];
   }
 };
-
-
-
-
 
 
 
