@@ -206,6 +206,7 @@ import {
   deleteBuilding,
   updateBuilding,
   updateFloorInBuilding,
+  getFloorsByBuildingId,
 } from "@/lib/buildingData";
 import { Building as BuildingIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -235,23 +236,23 @@ const Buildings: React.FC = () => {
   // }, []);
 
   // Update the useEffect in Buildings component
-    useEffect(() => {
-      const fetchBuildings = async () => {
-        setIsLoading(true);
-        try {
-          // Fetch only active buildings by default
-          const fetchedBuildings = await loadBuildingsFromAPI('active', 0);
-          setBuildings(fetchedBuildings);
-        } catch (error) {
-          console.error("Error loading buildings:", error);
-          toast.error("Failed to load buildings");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchBuildings();
-    }, []);
+  useEffect(() => {
+    const fetchBuildings = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch buildings with their floors
+        const fetchedBuildings = await loadBuildingsFromAPI('active', 0);
+        setBuildings(fetchedBuildings);
+      } catch (error) {
+        console.error("Error loading buildings:", error);
+        toast.error("Failed to load buildings");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    fetchBuildings();
+  }, []);
 
     // You can also add a refresh function if needed
     const refreshBuildings = async () => {
@@ -263,6 +264,22 @@ const Buildings: React.FC = () => {
         toast.error("Failed to refresh buildings");
       }
     };
+
+
+    // Add a function to refresh floors for a specific building
+const refreshBuildingFloors = async (buildingId: string) => {
+  try {
+    const floors = await getFloorsByBuildingId(buildingId);
+    setBuildings(prev => prev.map(building => 
+      building.building_id === buildingId 
+        ? { ...building, floors }
+        : building
+    ));
+  } catch (error) {
+    console.error("Error refreshing floors:", error);
+    toast.error("Failed to refresh floors");
+  }
+};
 
 
   const handleBuildingCreate = async (name: string, address: string, description: string) => {
