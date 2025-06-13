@@ -1,14 +1,14 @@
-import { Geist_Mono } from "next/font/google"; // Updated import names for clarity
+import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import ClientWrapper from "@/lib/ClientWrapper";
 import RouteGuard from "@/components/RouteGuard";
-import type { Metadata } from "next"; // Import Metadata type from Next.js
+import type { Metadata } from "next";
 
-// Configure GeistSans and GeistMono fonts
-const geistSans = Geist_Mono({
+// Configure GeistSans and GeistMono fonts properly
+const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
@@ -46,12 +46,10 @@ export const metadata: Metadata = {
   },
 };
 
-// Define props type for RootLayout
 interface RootLayoutProps {
-  children: React.ReactNode; // Type for children prop
+  children: React.ReactNode;
 }
 
-// RootLayout component with TypeScript
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -65,7 +63,6 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
             </AuthProvider>
           </ClientWrapper>
 
-          {/* Lazy-loaded Toaster for better performance */}
           <Toaster
             position="top-right"
             toastOptions={{
@@ -90,9 +87,6 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
                   secondary: "#fff",
                 },
               },
-              // closeButton: true,
-              // closeOnClick: true,
-              // dismissible: true,
             }}
           />
         </ThemeProvider>
