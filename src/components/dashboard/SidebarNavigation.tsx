@@ -1,138 +1,16 @@
-// import React from "react";
-// import NavItem from "./NavItem";
-// import { useRouter, usePathname } from "next/navigation";
+import React, { JSX } from "react";
+import { ChevronRight } from "lucide-react";
+import { NavItem, ThemeColor, UserRole } from "./dashboardConfig";
 
-// export interface NavigationItem {
-//   id: string;
-//   label: string;
-//   href: string;
-//   icon?: React.ComponentType<{ className?: string }>;
-//   badge?: string | number;
-//   children?: NavigationItem[];
-// }
-
-// interface SidebarNavigationProps {
-//   className?: string;
-//   onItemClick?: (item: NavigationItem) => void;
-// }
-
-// // Example navigation items - customize based on your needs
-// const navigationItems: NavigationItem[] = [
-//   {
-//     id: "dashboard",
-//     label: "Dashboard",
-//     href: "/dashboard",
-//   },
-//   {
-//     id: "buildings",
-//     label: "Buildings",
-//     href: "/buildings",
-//   },
-//   {
-//     id: "map-editor",
-//     label: "Map Editor",
-//     href: "/map-editor",
-//   },
-//   {
-//     id: "organizations",
-//     label: "Organizations",
-//     href: "/dashboard/organizations",
-//   },
-//   {
-//     id: "users",
-//     label: "Users",
-//     href: "/dashboard/users",
-//   },
-//   {
-//     id: "settings",
-//     label: "Settings",
-//     href: "/dashboard/settings",
-//     children: [
-//       {
-//         id: "profile",
-//         label: "Profile",
-//         href: "/dashboard/settings/profile",
-//       },
-//       {
-//         id: "security",
-//         label: "Security",
-//         href: "/dashboard/settings/security",
-//       },
-//     ],
-//   },
-// ];
-
-// const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
-//   className = "",
-//   onItemClick,
-// }) => {
-//   const router = useRouter();
-//   const pathname = usePathname(); // Get current pathname
-
-//   const handleItemClick = (item: NavigationItem) => {
-//     if (onItemClick) {
-//       onItemClick(item);
-//     }
-//     if (item.href) {
-//       router.push(item.href);
-//     }
-//   };
-
-//   return (
-//     <nav className={`h-full flex flex-col bg-white ${className}`}>
-//       {/* Logo/Brand */}
-//       <div className="p-6 border-b border-gray-200">
-//         <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-//       </div>
-
-//       {/* Navigation Items */}
-//       <div className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-//         {navigationItems.map((item) => (
-//           <NavItem
-//             key={item.id}
-//             item={item}
-//             // Use pathname instead of router.pathname
-//             isActive={pathname === item.href}
-//             onClick={() => handleItemClick(item)}
-//           />
-//         ))}
-//       </div>
-
-//       {/* Footer */}
-//       <div className="p-4 border-t border-gray-200">
-//         <div className="text-sm text-gray-500">© 2024 Your Company</div>
-//       </div>
-//     </nav>
-//   );
-// };
-
-// export default SidebarNavigation;
-
-
-
-import React from "react";
-import NavItem from "./NavItem";
-import { useRouter, usePathname } from "next/navigation";
-
-export interface NavigationItem {
-  id: string;
-  label: string;
-  href: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  badge?: string | number;
-  children?: NavigationItem[];
-}
-
+// Interface for component props
 interface SidebarNavigationProps {
-  navItems: NavigationItem[];
-  downNavItems: NavigationItem[];
+  navItems: NavItem[];
+  downNavItems: NavItem[];
   isCollapsed: boolean;
-  themeColor: any;
+  themeColor: ThemeColor;
   activeComponent: string;
   handleComponentChange: (componentId: string) => void;
-  userRole: string | number;
-  className?: string;
-  onItemClick?: (item: NavigationItem) => void;
+  userRole: UserRole;
 }
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
@@ -143,70 +21,104 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   activeComponent,
   handleComponentChange,
   userRole,
-  className = "",
-  onItemClick,
 }) => {
-  const router = useRouter();
-  const pathname = usePathname();
+  // Render navigation items with proper typing
+  const renderNavItems = (items: NavItem[]): JSX.Element => (
+    <ul className="space-y-3 md:space-y-2">
+      {items.map((item, index) => (
+        <li key={`${item.id}-${index}`}>
+          <div
+            onClick={() =>
+              item.onClick ? item.onClick() : handleComponentChange(item.id)
+            }
+            className={`flex items-center px-3 py-2 md:px-2 md:py-1 rounded-lg cursor-pointer justify-between
+                        ${
+                          themeColor.hoverBg
+                        } hover:shadow-md transition-all duration-300
+                        ${
+                          activeComponent === item.id
+                            ? themeColor.activeBg + " shadow-lg"
+                            : ""
+                        }`}
+            role="button"
+            tabIndex={0}
+            aria-label={`Navigate to ${item.text}`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                item.onClick ? item.onClick() : handleComponentChange(item.id);
+              }
+            }}
+          >
+            <span
+              className={`${themeColor.iconColor} p-3 md:p-2 bg-white rounded-full
+                            ${themeColor.hoverIconColor} ${themeColor.hoverIconBg} hover:scale-110
+                            transition-all duration-300 flex items-center justify-center`}
+              aria-hidden="true"
+            >
+              {item.icon}
+            </span>
 
-  const handleItemClick = (item: NavigationItem) => {
-    // Update active component
-    handleComponentChange(item.id);
-    
-    // Call custom onItemClick if provided
-    if (onItemClick) {
-      onItemClick(item);
-    }
-    
-    // Navigate to the route
-    if (item.href) {
-      router.push(item.href);
-    }
-  };
+            {!isCollapsed && (
+              <>
+                <span className="text-gray-700 font-medium pl-4 flex-grow hover:text-indigo-700 transition-colors duration-200">
+                  {item.text}
+                </span>
+                <ChevronRight
+                  className={`text-gray-500 ${themeColor.chevronHover} transition-colors duration-200 h-4 w-4`}
+                  aria-hidden="true"
+                />
+              </>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
 
-  const handleDownItemClick = (item: NavigationItem) => {
-    // For down navigation items (like logout), don't change active component
-    if (onItemClick) {
-      onItemClick(item);
-    }
-    
-    // Navigate to the route if it exists
-    if (item.href) {
-      router.push(item.href);
+  // Get section title based on user role
+  const getMainSectionTitle = (userRole: UserRole): string => {
+    switch (userRole) {
+      case 1:
+      case 4:
+        return "System Control";
+      case 2:
+        return "Administration";
+      case 3:
+      default:
+        return "SaaS Way-Finder";
     }
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Main Navigation Items */}
-      <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavItem
-            key={item.id}
-            item={item}
-            isActive={activeComponent === item.id || pathname === item.href}
-            onClick={() => handleItemClick(item)}
-            isCollapsed={isCollapsed}
-            themeColor={themeColor}
-          />
-        ))}
+      {/* Main Navigation Section */}
+      <div className="p-4 flex-1">
+        <div
+          className={`mb-4 ${
+            !isCollapsed
+              ? "pl-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              : "text-center"
+          }`}
+        >
+          {!isCollapsed && getMainSectionTitle(userRole)}
+        </div>
+        {renderNavItems(navItems)}
       </div>
 
-      {/* Bottom Navigation Items (Settings, Logout, etc.) */}
-      {downNavItems && downNavItems.length > 0 && (
-        <div className="border-t border-gray-200 px-3 py-4 space-y-1">
-          {downNavItems.map((item) => (
-            <NavItem
-              key={item.id}
-              item={item}
-              isActive={activeComponent === item.id || pathname === item.href}
-              onClick={() => handleDownItemClick(item)}
-              isCollapsed={isCollapsed}
-              themeColor={themeColor}
-            />
-          ))}
+      {/* Support & Settings Section */}
+      <div className="p-4 mt-auto border-t border-gray-100">
+        <div
+          className={`mb-4 ${
+            !isCollapsed
+              ? "pl-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              : "text-center"
+          }`}
+        >
+          {!isCollapsed && "Support & Settings"}
         </div>
-      )}
+        {renderNavItems(downNavItems)}
+      </div>
     </div>
   );
 };

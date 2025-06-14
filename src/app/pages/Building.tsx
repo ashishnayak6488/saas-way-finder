@@ -56,17 +56,17 @@
 //     const handleBuildingUpdate = (buildingId: string, updates: { name?: string; address?: string; description?: string }) => {
 //         const updatedBuildings = updateBuilding(buildings, buildingId, updates);
 //         setBuildings(updatedBuildings);
-        
+
 //         const updatedBuilding = updatedBuildings.find((b) => b.id === buildingId);
 //         if (updatedBuilding && selectedBuilding?.id === buildingId) {
 //         setSelectedBuilding(updatedBuilding);
 //         }
 //     };
-  
+
 //   const handleFloorUpdate = (buildingId: string, floorId: string, updates: { label?: string; order?: number; imageUrl?: string }) => {
 //     const updatedBuildings = updateFloorInBuilding(buildings, buildingId, floorId, updates);
 //     setBuildings(updatedBuildings);
-    
+
 //     const updatedBuilding = updatedBuildings.find((b) => b.id === buildingId);
 //     if (updatedBuilding && selectedBuilding?.id === buildingId) {
 //       setSelectedBuilding(updatedBuilding);
@@ -142,8 +142,8 @@
 //             <p className="text-sm text-gray-600 mb-3">
 //               Export all building data as backup
 //             </p>
-//             <Button 
-//               variant="outline" 
+//             <Button
+//               variant="outline"
 //               size="sm"
 //               onClick={() => {
 //                 const dataStr = JSON.stringify(buildings, null, 2);
@@ -159,7 +159,7 @@
 //               Export JSON
 //             </Button>
 //           </div>
-          
+
 //           <div className="p-4 border rounded-lg">
 //             <h4 className="font-medium text-gray-900 mb-2">Import Building</h4>
 //             <p className="text-sm text-gray-600 mb-3">
@@ -169,7 +169,7 @@
 //               Coming Soon
 //             </Button>
 //           </div>
-          
+
 //           <div className="p-4 border rounded-lg">
 //             <h4 className="font-medium text-gray-900 mb-2">Statistics</h4>
 //             <p className="text-sm text-gray-600 mb-3">
@@ -187,10 +187,6 @@
 // };
 
 // export default Buildings;
-
-
-
-
 
 "use client";
 
@@ -214,7 +210,9 @@ import { toast } from "react-hot-toast";
 
 const Buildings: React.FC = () => {
   const [buildings, setBuildings] = useState<Building[]>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load buildings on component mount
@@ -241,7 +239,7 @@ const Buildings: React.FC = () => {
       setIsLoading(true);
       try {
         // Fetch buildings with their floors
-        const fetchedBuildings = await loadBuildingsFromAPI('active', 0);
+        const fetchedBuildings = await loadBuildingsFromAPI("active", 0);
         setBuildings(fetchedBuildings);
       } catch (error) {
         console.error("Error loading buildings:", error);
@@ -250,42 +248,46 @@ const Buildings: React.FC = () => {
         setIsLoading(false);
       }
     };
-  
+
     fetchBuildings();
   }, []);
 
-    // You can also add a refresh function if needed
-    const refreshBuildings = async () => {
-      try {
-        const fetchedBuildings = await loadBuildingsFromAPI('active', 0);
-        setBuildings(fetchedBuildings);
-      } catch (error) {
-        console.error("Error refreshing buildings:", error);
-        toast.error("Failed to refresh buildings");
-      }
-    };
+  // You can also add a refresh function if needed
+  const refreshBuildings = async () => {
+    try {
+      const fetchedBuildings = await loadBuildingsFromAPI("active", 0);
+      setBuildings(fetchedBuildings);
+    } catch (error) {
+      console.error("Error refreshing buildings:", error);
+      toast.error("Failed to refresh buildings");
+    }
+  };
 
+  // Add a function to refresh floors for a specific building
+  const refreshBuildingFloors = async (buildingId: string) => {
+    try {
+      const floors = await getFloorsByBuildingId(buildingId);
+      setBuildings((prev) =>
+        prev.map((building) =>
+          building.building_id === buildingId
+            ? { ...building, floors }
+            : building
+        )
+      );
+    } catch (error) {
+      console.error("Error refreshing floors:", error);
+      toast.error("Failed to refresh floors");
+    }
+  };
 
-    // Add a function to refresh floors for a specific building
-const refreshBuildingFloors = async (buildingId: string) => {
-  try {
-    const floors = await getFloorsByBuildingId(buildingId);
-    setBuildings(prev => prev.map(building => 
-      building.building_id === buildingId 
-        ? { ...building, floors }
-        : building
-    ));
-  } catch (error) {
-    console.error("Error refreshing floors:", error);
-    toast.error("Failed to refresh floors");
-  }
-};
-
-
-  const handleBuildingCreate = async (name: string, address: string, description: string) => {
+  const handleBuildingCreate = async (
+    name: string,
+    address: string,
+    description: string
+  ) => {
     const newBuilding = await createBuilding(name, address, description);
     if (newBuilding) {
-      setBuildings(prev => [...prev, newBuilding]);
+      setBuildings((prev) => [...prev, newBuilding]);
       setSelectedBuilding(newBuilding);
     }
   };
@@ -294,10 +296,15 @@ const refreshBuildingFloors = async (buildingId: string) => {
     setSelectedBuilding(building);
   };
 
-  const handleBuildingUpdate = async (buildingId: string, updates: { name?: string; address?: string; description?: string }) => {
+  const handleBuildingUpdate = async (
+    buildingId: string,
+    updates: { name?: string; address?: string; description?: string }
+  ) => {
     const updatedBuilding = await updateBuilding(buildingId, updates);
     if (updatedBuilding) {
-      setBuildings(prev => prev.map(b => b.building_id === buildingId ? updatedBuilding : b));
+      setBuildings((prev) =>
+        prev.map((b) => (b.building_id === buildingId ? updatedBuilding : b))
+      );
       if (selectedBuilding?.building_id === buildingId) {
         setSelectedBuilding(updatedBuilding);
       }
@@ -307,7 +314,7 @@ const refreshBuildingFloors = async (buildingId: string) => {
   const handleBuildingDelete = async (buildingId: string) => {
     const success = await deleteBuilding(buildingId);
     if (success) {
-      setBuildings(prev => prev.filter(b => b.building_id !== buildingId));
+      setBuildings((prev) => prev.filter((b) => b.building_id !== buildingId));
       if (selectedBuilding?.building_id === buildingId) {
         setSelectedBuilding(null);
       }
@@ -323,8 +330,10 @@ const refreshBuildingFloors = async (buildingId: string) => {
       // Refresh buildings to get updated data
       const updatedBuildings = await loadBuildingsFromAPI();
       setBuildings(updatedBuildings);
-      
-      const updatedBuilding = updatedBuildings.find(b => b.building_id === buildingId);
+
+      const updatedBuilding = updatedBuildings.find(
+        (b) => b.building_id === buildingId
+      );
       if (updatedBuilding) {
         setSelectedBuilding(updatedBuilding);
       }
@@ -336,13 +345,19 @@ const refreshBuildingFloors = async (buildingId: string) => {
     floorId: string,
     updates: { label?: string; order?: number; imageUrl?: string }
   ) => {
-    const updatedFloor = await updateFloorInBuilding(buildingId, floorId, updates);
+    const updatedFloor = await updateFloorInBuilding(
+      buildingId,
+      floorId,
+      updates
+    );
     if (updatedFloor) {
       // Refresh buildings to get updated data
       const updatedBuildings = await loadBuildingsFromAPI();
       setBuildings(updatedBuildings);
-      
-      const updatedBuilding = updatedBuildings.find(b => b.building_id === buildingId);
+
+      const updatedBuilding = updatedBuildings.find(
+        (b) => b.building_id === buildingId
+      );
       if (updatedBuilding) {
         setSelectedBuilding(updatedBuilding);
       }
@@ -355,22 +370,32 @@ const refreshBuildingFloors = async (buildingId: string) => {
       // Refresh buildings to get updated data
       const updatedBuildings = await loadBuildingsFromAPI();
       setBuildings(updatedBuildings);
-      
-      const updatedBuilding = updatedBuildings.find(b => b.building_id === buildingId);
+
+      const updatedBuilding = updatedBuildings.find(
+        (b) => b.building_id === buildingId
+      );
       if (updatedBuilding) {
         setSelectedBuilding(updatedBuilding);
       }
     }
   };
 
-  const handleFloorReorder = async (buildingId: string, reorderedFloors: Floor[]) => {
-    const updatedFloors = await reorderFloorsInBuilding(buildingId, reorderedFloors);
+  const handleFloorReorder = async (
+    buildingId: string,
+    reorderedFloors: Floor[]
+  ) => {
+    const updatedFloors = await reorderFloorsInBuilding(
+      buildingId,
+      reorderedFloors
+    );
     if (updatedFloors) {
       // Refresh buildings to get updated data
       const updatedBuildings = await loadBuildingsFromAPI();
       setBuildings(updatedBuildings);
-      
-      const updatedBuilding = updatedBuildings.find(b => b.building_id === buildingId);
+
+      const updatedBuilding = updatedBuildings.find(
+        (b) => b.building_id === buildingId
+      );
       if (updatedBuilding) {
         setSelectedBuilding(updatedBuilding);
       }
@@ -397,7 +422,9 @@ const refreshBuildingFloors = async (buildingId: string) => {
             <BuildingIcon className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Building Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Building Management
+            </h1>
             <p className="text-sm text-gray-500">
               Manage buildings and floors for your wayfinding system
             </p>
@@ -428,19 +455,23 @@ const refreshBuildingFloors = async (buildingId: string) => {
 
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Quick Actions
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 border rounded-lg">
             <h4 className="font-medium text-gray-900 mb-2">Create Building</h4>
             <p className="text-sm text-gray-600 mb-3">
               Add a new building to your wayfinding system
             </p>
-            <Button 
+            <Button
               onClick={() => {
                 const name = prompt("Enter building name:");
                 if (name?.trim()) {
-                  const address = prompt("Enter building address (optional):") || "";
-                  const description = prompt("Enter building description (optional):") || "";
+                  const address =
+                    prompt("Enter building address (optional):") || "";
+                  const description =
+                    prompt("Enter building description (optional):") || "";
                   handleBuildingCreate(name.trim(), address, description);
                 }
               }}
@@ -449,7 +480,7 @@ const refreshBuildingFloors = async (buildingId: string) => {
               Create Building
             </Button>
           </div>
-          
+
           <div className="p-4 border rounded-lg">
             <h4 className="font-medium text-gray-900 mb-2">Import Building</h4>
             <p className="text-sm text-gray-600 mb-3">
@@ -459,22 +490,24 @@ const refreshBuildingFloors = async (buildingId: string) => {
               Coming Soon
             </Button>
           </div>
-          
+
           <div className="p-4 border rounded-lg">
             <h4 className="font-medium text-gray-900 mb-2">Export Data</h4>
             <p className="text-sm text-gray-600 mb-3">
               Export all building data as backup
             </p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => {
                 const dataStr = JSON.stringify(buildings, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const dataBlob = new Blob([dataStr], {
+                  type: "application/json",
+                });
                 const url = URL.createObjectURL(dataBlob);
-                const link = document.createElement('a');
+                const link = document.createElement("a");
                 link.href = url;
-                link.download = 'buildings-backup.json';
+                link.download = "buildings-backup.json";
                 link.click();
                 URL.revokeObjectURL(url);
               }}

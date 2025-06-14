@@ -6,7 +6,17 @@ import { toast } from "react-hot-toast";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import LogoutConfirmationModal from "@/components/LogoutConfirmationModal";
-import Buildings from "../pages/Building";
+import { BuildingManager } from "@/components/BuildingManager";
+import { Building, Floor } from "@/types/building";
+import {
+  loadBuildingsFromStorage,
+  saveBuildingsToStorage,
+  createBuilding,
+  addFloorToBuilding,
+  removeFloorFromBuilding,
+  reorderFloorsInBuilding,
+  deleteBuilding,
+} from "@/lib/buildingData";
 
 interface User {
   role_id: string;
@@ -21,33 +31,38 @@ export default function BuildingsPage() {
   const [activeComponent, setActiveComponent] = useState<string>("buildings");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState<boolean>(false);
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   
   const { user, logout } = useAuth() as AuthContextType;
-  const userRole: string | undefined = user?.role_id;
+  const userRole = user?.role_id || "user";
 
-  // Update active component from localStorage on client-side only
+  // Load buildings on component mount
   useEffect(() => {
-    // Set buildings as active component
+    const savedBuildings = loadBuildingsFromStorage();
+    setBuildings(savedBuildings);
+    
     setActiveComponent("buildings");
     localStorage.setItem("activeComponent", "buildings");
     
-    // Simulate loading
     const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle component change
+  // Save buildings whenever they change
+  useEffect(() => {
+    saveBuildingsToStorage(buildings);
+  }, [buildings]);
+
   const handleComponentChange = (componentId: string) => {
     setActiveComponent(componentId);
     localStorage.setItem("activeComponent", componentId);
   };
 
-  // Handle logout
   const handleLogout = () => {
     setShowLogoutConfirmation(true);
   };
 
-  // Perform the actual logout
   const confirmLogout = async () => {
     try {
       const success = await logout();
@@ -64,6 +79,48 @@ export default function BuildingsPage() {
     }
   };
 
+  // Building management handlers
+  const handleBuildingCreate = (name: string) => {
+    const newBuilding = createBuilding(name);
+    setBuildings([...buildings, newBuilding]);
+    setSelectedBuilding(newBuilding);
+    toast.success(`Building "${name}" created successfully`);
+  };
+
+  const handleBuildingSelect = (building: Building) => {
+    setSelectedBuilding(building);
+  };
+
+  const handleBuildingDelete = (buildingId: string) => {
+    const buildingToDelete = buildings.find(b => b.id === buildingId);
+    const updatedBuildings = deleteBuilding(buildings, buildingId);
+    setBuildings(updatedBuildings);
+    
+    if (selectedBuilding?.id === buildingId) {
+      setSelectedBuilding(null);
+    }
+    
+    toast.success(`Building "${buildingToDelete?.name}" deleted successfully`);
+  };
+
+  const handleFloorAdd = (buildingId: string, floor: Floor) => {
+    const updatedBuildings = addFloorToBuilding(buildings, buildingId, floor);
+    setBuildings(updatedBuildings);
+    toast.success(`Floor "${floor.name}" added to building "${selectedBuilding?.name}"`);
+  };
+
+  const handleFloorRemove = (buildingId: string, floorId: string) => {
+    const updatedBuildings = removeFloorFromBuilding(buildings, buildingId, floorId);
+    setBuildings(updatedBuildings);
+    toast.success(`Floor removed from building "${selectedBuilding?.name}"`);
+  };
+
+  const handleFloorReorder = (buildingId: string, newOrder: string[]) => {
+    const updatedBuildings = reorderFloorsInBuilding(buildings, buildingId, newOrder);
+    setBuildings(updatedBuildings);
+    toast.success(`Floors reordered in building "${selectedBuilding?.name}"`);
+  };
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -77,7 +134,16 @@ export default function BuildingsPage() {
     >
       {/* Buildings Content */}
       <div className="h-full">
-        <Buildings />
+        <BuildingManager
+          buildings={buildings}
+          selectedBuilding={selectedBuilding}
+          handleBuildingCreate={handleBuildingCreate}
+          handleBuildingSelect={handleBuildingSelect}
+          handleBuildingDelete={handleBuildingDelete}
+          handleFloorAdd={handleFloorAdd}
+          handleFloorRemove={handleFloorRemove}
+          handleFloorReorder={handleFloorReorder}
+        />
       </div>
       
       {showLogoutConfirmation && (

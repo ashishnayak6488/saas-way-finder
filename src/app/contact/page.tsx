@@ -166,7 +166,7 @@ export default function Contact(): JSX.Element {
             </h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="group">
-                <Select
+                {/* <Select
                   value={formData.department}
                   onChange={handleSelectChange}
                   options={departments.map((dept) => ({
@@ -178,7 +178,7 @@ export default function Contact(): JSX.Element {
                   placeholder="Select Department"
                   className="w-full"
                   name="department"
-                />
+                /> */}
               </div>
 
               <div className="group">

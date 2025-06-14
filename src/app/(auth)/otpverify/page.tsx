@@ -222,7 +222,7 @@ const EnterOTPPage: React.FC = () => {
             key={index}
             ref={(el) => {
               if (inputRefs.current) {
-                inputRefs.current[index] = el
+                inputRefs.current[index] = el;
               }
             }}
             type="text"
@@ -238,13 +238,14 @@ const EnterOTPPage: React.FC = () => {
             className="w-10 h-12 text-center text-xl border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100"
             disabled={isLoading}
           />
-        ))}      </div>
+        ))}{" "}
+      </div>
 
       <Button
         onClick={handleVerification}
         className="w-full"
         variant="secondary"
-        size="default"
+        size="md"
         fullWidth={true}
         disabled={isLoading || !verificationCode.every((digit) => digit !== "")}
       >

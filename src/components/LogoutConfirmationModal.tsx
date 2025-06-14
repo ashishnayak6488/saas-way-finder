@@ -90,3 +90,70 @@ const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
 };
 
 export default LogoutConfirmationModal;
+
+
+
+
+
+
+
+
+// "use client";
+
+// import React from 'react';
+// import { X, LogOut } from 'lucide-react';
+// import { Button } from '@/components/ui/Button';
+
+// interface LogoutConfirmationModalProps {
+//   onClose: () => void;
+//   onConfirm: () => void;
+//   message: string;
+// }
+
+// const LogoutConfirmationModal: React.FC<LogoutConfirmationModalProps> = ({
+//   onClose,
+//   onConfirm,
+//   message,
+// }) => {
+//   return (
+//     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+//       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+//         <div className="flex items-center justify-between p-6 border-b">
+//           <div className="flex items-center space-x-3">
+//             <div className="bg-red-100 p-2 rounded-full">
+//               <LogOut className="h-5 w-5 text-red-600" />
+//             </div>
+//             <h3 className="text-lg font-semibold text-gray-900">Confirm Logout</h3>
+//           </div>
+//           <button
+//             onClick={onClose}
+//             className="text-gray-400 hover:text-gray-600 transition-colors"
+//           >
+//             <X className="h-5 w-5" />
+//           </button>
+//         </div>
+        
+//         <div className="p-6">
+//           <p className="text-gray-600 mb-6">{message}</p>
+          
+//           <div className="flex space-x-3 justify-end">
+//             <Button
+//               variant="outline"
+//               onClick={onClose}
+//             >
+//               Cancel
+//             </Button>
+//             <Button
+//               variant="destructive"
+//               onClick={onConfirm}
+//             >
+//               Logout
+//             </Button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default LogoutConfirmationModal;

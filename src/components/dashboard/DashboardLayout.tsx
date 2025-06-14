@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, ReactNode, JSX } from "react";
+import React, { useState, useEffect, ReactNode } from "react";
 import Image from "next/image";
 import { ChevronsLeft, ChevronsRight, Menu, X } from "lucide-react";
 import Logo from "@/app/logo.jpg";
@@ -11,40 +11,40 @@ import {
   getThemeColor,
   getDashboardTitle,
   UserRole,
-  type NavItem,
-  type ThemeColor,
+  ThemeColor,
+  NavItem,
 } from "./dashboardConfig";
 
-// Define the props interface
+// Types and Interfaces
 interface DashboardLayoutProps {
-  userRole: UserRole | number;
+  userRole: UserRole;
   activeComponent: string;
   handleComponentChange: (componentId: string) => void;
   handleLogout: () => void;
   children: ReactNode;
 }
 
-// Define the logo API response interface
-interface LogoApiResponse {
+interface LogoResponse {
   logo_url?: string;
-  message?: string;
 }
 
-export default function DashboardLayout({
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   userRole,
   activeComponent,
   handleComponentChange,
   handleLogout,
   children,
-}: DashboardLayoutProps): JSX.Element {
+}) => {
+  // State management with proper types
   const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(true);
   const [logo, setLogo] = useState<string | null>(null);
 
+  // Handle responsive behavior
   useEffect(() => {
     const handleResize = (): void => {
-      const width: number = window.innerWidth;
+      const width = window.innerWidth;
       setIsLargeScreen(width >= 1024);
 
       // Auto-collapse sidebar on medium screens
@@ -57,20 +57,20 @@ export default function DashboardLayout({
 
     handleResize();
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Fetch logo with proper error handling
   useEffect(() => {
     const getLogo = async (): Promise<void> => {
       try {
-        const response: Response = await fetch("/api/logo/getLogo");
+        const response = await fetch("/api/logo/getLogo");
         if (!response.ok) {
           console.error("Failed to fetch logo:", response.status);
           return;
         }
 
-        const data: LogoApiResponse = await response.json();
+        const data: LogoResponse = await response.json();
         if (data && data.logo_url) {
           setLogo(data.logo_url);
         }
@@ -80,7 +80,7 @@ export default function DashboardLayout({
     };
 
     // Set default logo first
-    setLogo(Logo.src || (typeof Logo === "string" ? Logo : null));
+    setLogo(typeof Logo === "string" ? Logo : Logo.src);
     getLogo();
   }, []);
   // Handle image error with proper typing
@@ -105,11 +105,12 @@ export default function DashboardLayout({
       // Create and append the initials text
       const initialsElement = document.createElement("span");
       initialsElement.className = "text-blue-600 font-medium text-sm";
-      initialsElement.textContent = "XPI";
+      initialsElement.textContent = "SWF"; // SaaS Way-Finder initials
       parentElement.appendChild(initialsElement);
     }
   };
 
+  // Get configuration based on user role
   const navItems: NavItem[] = getNavItems(userRole);
   const downNavItems: NavItem[] = getDownNavItems(handleLogout);
   const themeColor: ThemeColor = getThemeColor(userRole);
@@ -126,9 +127,9 @@ export default function DashboardLayout({
           aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
         >
           {isSidebarOpen ? (
-            <X className="text-blue-500" />
+            <X className="text-blue-500 h-5 w-5" />
           ) : (
-            <Menu className="text-blue-500" />
+            <Menu className="text-blue-500 h-5 w-5" />
           )}
         </button>
       </div>
@@ -140,6 +141,7 @@ export default function DashboardLayout({
                 ${isCollapsed ? "w-22" : "w-64"}
                 lg:left-0`}
       >
+        {/* Sidebar Header */}
         <div className="sticky top-0 z-10 p-3 md:p-4 bg-white border-b border-gray-200">
           {!isCollapsed ? (
             <div className="flex flex-row items-center justify-between">
@@ -147,7 +149,7 @@ export default function DashboardLayout({
                 <div className="bg-white p-0 rounded-full shadow-sm">
                   <Image
                     src={logo || Logo}
-                    alt="Company Logo"
+                    alt="SaaS Way-Finder Logo"
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover bg-white"
                     width={40}
                     height={40}
@@ -175,7 +177,7 @@ export default function DashboardLayout({
               <div className="bg-white p-1 rounded-full shadow-sm mb-2">
                 <Image
                   src={logo || Logo}
-                  alt="Company Logo"
+                  alt="SaaS Way-Finder Logo"
                   className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
                   width={32}
                   height={32}
@@ -197,6 +199,7 @@ export default function DashboardLayout({
           )}
         </div>
 
+        {/* Sidebar Navigation */}
         <SidebarNavigation
           navItems={navItems}
           downNavItems={downNavItems}
@@ -218,16 +221,11 @@ export default function DashboardLayout({
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30"
           onClick={() => setSidebarOpen(false)}
-          role="button"
-          tabIndex={0}
-          aria-label="Close sidebar"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              setSidebarOpen(false);
-            }
-          }}
+          aria-label="Close sidebar overlay"
         />
       )}
     </div>
   );
-}
+};
+
+export default DashboardLayout;

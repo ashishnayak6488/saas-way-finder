@@ -257,7 +257,7 @@ export default function Signup({ onLoginClick }: SignupProps) {
               !isFormComplete() ? "cursor-not-allowed opacity-50" : ""
             }`}
             disabled={isLoading || !isFormComplete()}
-            size="default"
+            size="md"
             fullWidth={true}
           >
             {isLoading ? (
