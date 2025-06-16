@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
 
     try {
       data = JSON.parse(responseText);
-    } catch (e) {
+    } catch (error: unknown) {
       console.error("Failed to parse response as JSON:", responseText);
       data = { message: responseText || "Invalid response from server" };
     }

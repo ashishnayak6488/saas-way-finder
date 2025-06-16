@@ -18,8 +18,8 @@ interface Organization {
   address_id?: number | null;
   created_by?: string;
   updated_by?: string;
-  users?: any[];
-  admins?: any[];
+  users?: any[]|unknown[];
+  admins?: any[]|unknown[];
   maxLimit?: {
     screen: number;
     content: number;
@@ -227,10 +227,11 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({
         credentials: "include",
       });
 
-      let data: any;
+      let data: any|unknown;
+      console.log("Response:", response)
       try {
         data = await response.json();
-      } catch (e) {
+      } catch (error:unknown) {
         console.error("Failed to parse response as JSON");
         throw new Error("Invalid response from server");
       }
@@ -483,10 +484,10 @@ export const CreateUserOrAdmin: React.FC<CreateUserOrAdminProps> = ({
         body: JSON.stringify(userPayload),
       });
 
-      let data: any;
+      let data: any|unknown;
       try {
         data = await response.json();
-      } catch (e) {
+      } catch (error:unknown) {
         console.error("Failed to parse response as JSON");
         throw new Error("Invalid response from server");
       }
@@ -519,7 +520,7 @@ export const CreateUserOrAdmin: React.FC<CreateUserOrAdminProps> = ({
         role_id: role === "Maintainer" ? 3 : 2,
       });
       onClose();
-    } catch (error: any) {
+    } catch (error: any|unknown) {
       console.error(`Error creating ${role.toLowerCase()}:`, error);
       toast.error(`Failed to create ${role.toLowerCase()}: ${error.message}`, {
         id: loadingToast,

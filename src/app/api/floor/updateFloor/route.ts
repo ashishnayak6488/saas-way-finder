@@ -148,7 +148,7 @@ export async function PUT(req: NextRequest) {
 
     try {
       data = JSON.parse(responseText);
-    } catch (e) {
+    } catch (error:unknown) {
       console.error("Failed to parse response as JSON:", responseText);
       return NextResponse.json(
         { message: "Invalid response from server", details: responseText },

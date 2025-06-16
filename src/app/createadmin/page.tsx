@@ -126,7 +126,7 @@ const Page: React.FC = () => {
   const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
   const [orgToEdit, setOrgToEdit] = useState<Organization | null>(null);
   const [allUsers, setAllUsers] = useState<OrgUsers[]>([]);
-  const [allRole, setAllRole] = useState<Role[]>([]);
+  // const [allRole, setAllRole] = useState<Role[]>([]);
   const [orgOfSuperAdmin, setOrgOfSuperrAdmin] = useState<
     SuperAdminOrg | undefined
   >(undefined);
@@ -210,7 +210,7 @@ const Page: React.FC = () => {
 
   useEffect(() => {
     void fetchAllData();
-  }, []);
+  }, [fetchAllData]);
 
   const addOrganization = (organization: Organization) => {
     addOrg(organizations, setOrganizations, organization);
@@ -367,7 +367,7 @@ const Page: React.FC = () => {
       }
 
       toast.success("Password reset email sent successfully");
-    } catch (error: any) {
+    } catch (error: any|unknown) {
       toast.error(error.message || "Failed to send password reset email");
     }
   };

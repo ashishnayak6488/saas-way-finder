@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Play,
+  // Play,
   Search,
   Upload,
   Trash2,
@@ -122,14 +122,14 @@ const SortOptions: SortOption[] = [
 
 const ContentManagementPage: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [history, setHistory] = useState<ContentItem[][]>([]);
+  // const [history, setHistory] = useState<ContentItem[][]>([]);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] =
     useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   // const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<string>("name"); // 'name', 'date', 'size'
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // 'asc' or 'desc'
+  // const [sortBy, setSortBy] = useState<string>("name"); // 'name', 'date', 'size'
+  // const [sortOrder,` setSortOrder] = useState<"asc" | "desc">("asc"); // 'asc' or 'desc'
   const [selectedType, setSelectedType] = useState<string>("all"); // 'all', 'image', 'video'
   const [sortOption, setSortOption] = useState<string>("name_asc");
 
@@ -163,7 +163,7 @@ const ContentManagementPage: React.FC = () => {
       }
 
       return data;
-    } catch (error) {
+    } catch (error: unknown) {
       throw new Error("Failed to fetch contents");
     }
   };
@@ -190,9 +190,9 @@ const ContentManagementPage: React.FC = () => {
       }));
 
       setContentItems(formattedContent);
-    } catch (error) {
+    } catch (error: unknown) {
       setError("Failed to fetch contents");
-      // console.error('Error fetching contents:', error);
+      console.error("Error fetching contents:", error);
     } finally {
       setIsLoading(false);
     }
@@ -202,12 +202,12 @@ const ContentManagementPage: React.FC = () => {
     if (didFetchContent.current) return;
     fetchContents();
     didFetchContent.current = true;
-  }, []);
+  }, [fetchContents]);
 
   const createContents = async (
     files: FileData[],
     descriptions: string | null = null,
-    metadata: any = null,
+    metadata: any | unknown | null = null,
     onProgress?: (fileIndex: number, progress: number) => void
   ): Promise<ApiResponse> => {
     try {
@@ -324,24 +324,24 @@ const ContentManagementPage: React.FC = () => {
   //   }
   // }, [contentItems, history.length]);
 
-  const handleStateChange = (newItems: ContentItem[]): void => {
-    setContentItems(newItems);
-  };
+  // const handleStateChange = (newItems: ContentItem[]): void => {
+  //   setContentItems(newItems);
+  // };
 
   // Selection handlers
-  const handleSelectAll = (): void => {
-    const displayedItemIds = displayedItems.map((item) => item.id);
-    if (selectedItems.length === displayedItemIds.length) {
-      setSelectedItems((prev) =>
-        prev.filter((id) => !displayedItemIds.includes(id))
-      );
-    } else {
-      setSelectedItems((prev) => [
-        ...prev,
-        ...displayedItemIds.filter((id) => !prev.includes(id)),
-      ]);
-    }
-  };
+  // const handleSelectAll = (): void => {
+  //   const displayedItemIds = displayedItems.map((item) => item.id);
+  //   if (selectedItems.length === displayedItemIds.length) {
+  //     setSelectedItems((prev) =>
+  //       prev.filter((id) => !displayedItemIds.includes(id))
+  //     );
+  //   } else {
+  //     setSelectedItems((prev) => [
+  //       ...prev,
+  //       ...displayedItemIds.filter((id) => !prev.includes(id)),
+  //     ]);
+  //   }
+  // };
 
   const handleSelect = (id: string): void => {
     setSelectedItems((prev) => {
@@ -393,7 +393,7 @@ const ContentManagementPage: React.FC = () => {
         }
         throw new Error("Failed to delete contents");
       }
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error("Failed to delete contents");
       // Refresh content if needed
       try {
@@ -424,7 +424,7 @@ const ContentManagementPage: React.FC = () => {
 
   const deleteContents = async (
     contentIds: string[]
-  ): Promise<{ status: string; [key: string]: any }> => {
+  ): Promise<{ status: string; [key: string]: any | unknown }> => {
     try {
       setShowDeleteConfirmation(false);
       const response = await fetch(`/api/content/deleteContents`, {
@@ -441,7 +441,7 @@ const ContentManagementPage: React.FC = () => {
 
       if (
         data.results &&
-        data.results.every((r: any) => r.status === "success")
+        data.results.every((r: any | unknown) => r.status === "success")
       ) {
         return { status: "success", ...data };
       } else {
@@ -453,9 +453,9 @@ const ContentManagementPage: React.FC = () => {
   };
 
   const handleAddPlaylist = (): void => {
-    const selectedContentData = contentItems.filter((item) =>
-      selectedItems.includes(item.id)
-    );
+    // const selectedContentData = contentItems.filter((item) =>
+    //   selectedItems.includes(item.id)
+    // );
     setIsPlaylistModalOpen(true);
   };
 
@@ -470,7 +470,7 @@ const ContentManagementPage: React.FC = () => {
   const addContentsToPlaylists = async (
     contentIds: string[],
     playlistIds: string[]
-  ): Promise<any> => {
+  ): Promise<any | unknown> => {
     try {
       const response = await fetch("/api/content/addContentsToPlaylists", {
         method: "POST",
@@ -583,9 +583,9 @@ const ContentManagementPage: React.FC = () => {
   };
 
   // Handle sort order change
-  const toggleSortOrder = (): void => {
-    setSortOrder((current) => (current === "asc" ? "desc" : "asc"));
-  };
+  // const toggleSortOrder = (): void => {
+  //   setSortOrder((current) => (current === "asc" ? "desc" : "asc"));
+  // };
 
   // Get filtered and sorted items
   const displayedItems = getFilteredAndSortedItems();
@@ -788,7 +788,7 @@ const ContentManagementPage: React.FC = () => {
                         No content Found
                       </h3>
                       <p className="text-gray-600 text-center">
-                        No content found matching "{searchTerm}". Try different
+                        No content found matching &quot;{searchTerm}&quot;. Try different
                         keywords.
                       </p>
                       <Button
@@ -858,7 +858,7 @@ const ContentManagementPage: React.FC = () => {
                           </div>
                         ) : (
                           <div className="relative w-full h-full flex items-center justify-center">
-                            <img
+                            <Image
                               src={item.thumbnail}
                               alt={item.title}
                               className="max-w-full max-h-full w-auto h-auto object-contain"

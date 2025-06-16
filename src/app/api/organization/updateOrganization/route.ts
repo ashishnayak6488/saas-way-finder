@@ -3,7 +3,7 @@ import { getAuthToken } from "@/middleware";
 
 interface ErrorResponse {
   message: string;
-  error?: any;
+  error?: any|unknown;
 }
 
 interface UpdateOrganizationRequest {
@@ -28,7 +28,7 @@ interface UpdateOrganizationData {
 }
 
 interface ApiResponse {
-  data?: any;
+  data?: any|unknown;
   message?: string;
   success?: boolean;
   detail?: string;
@@ -49,7 +49,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     }
 
     // Remove id from the data sent to FastAPI
-    const { id, ...dataWithoutId } = updateData;
+    const { ...dataWithoutId } = updateData;
 
     // Prepare data according to the backend model (all fields are optional)
     const dataToSend: UpdateOrganizationData = {
@@ -118,7 +118,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       // Then parse it as JSON if possible
       data = JSON.parse(responseText);
       console.log("Response data from route:", data);
-    } catch (e) {
+    } catch (error:unknown) {
       console.error("Failed to parse response as JSON:", responseText);
       data = { message: responseText || "Invalid response from server" };
     }

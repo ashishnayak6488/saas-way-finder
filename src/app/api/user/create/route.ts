@@ -23,7 +23,7 @@ interface ApiUserData {
 }
 
 interface ApiResponse {
-  data?: any;
+  data?: any|unknown;
   message?: string;
   success?: boolean;
   detail?: string;

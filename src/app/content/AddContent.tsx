@@ -2,6 +2,7 @@
 
 import { CircleCheckBig } from "lucide-react";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 // import ProgessAndCheck from "./UploadingProgess";
 import CheckMark from "./CheckMark";
 import UploadingProgess from "./UploadingProgess";
@@ -100,8 +101,8 @@ interface AddContentProps {
 const AddContent: React.FC<AddContentProps> = ({
   onClose,
   onAdd,
-  onSuccess,
-  playlistId,
+  // onSuccess,
+  // playlistId,
 }) => {
   const [formData, setFormData] = useState<FormData>({
     files: [],
@@ -119,7 +120,7 @@ const AddContent: React.FC<AddContentProps> = ({
   const [uploadingStatus, setUploadingStatus] = useState<UploadingStatusMap>(
     {}
   );
-  const [uploadedFiles, setUploadedFiles] = useState<FileData[]>([]);
+  // const [uploadedFiles, setUploadedFiles] = useState<FileData[]>([]);
 
   const shouldShowTerms = formData.files.length > 0;
   const canSubmit = formData.files.length > 0 && formData.acceptedTerms;
@@ -183,7 +184,7 @@ const AddContent: React.FC<AddContentProps> = ({
     const newFiles = Array.from(files);
     setErrors({ files: "", acceptedTerms: "" });
 
-    const validFiles: FileData[] = [];
+    // const validFiles: FileData[] = [];
     const filePromises: Promise<{ fileData: FileData; preview: Preview }>[] =
       [];
 
@@ -382,24 +383,24 @@ const AddContent: React.FC<AddContentProps> = ({
 
         if (successfulUploads.length > 0) {
           // Format the uploaded files data - with more flexible field mapping
-          const newContents: ContentItem[] = successfulUploads.map((item) => ({
-            id: item.content_id || item.id || "",
-            type: (item.content_type || item.type || "")?.startsWith("image")
-              ? "image"
-              : "video",
-            title: item.name || item.filename || "Untitled",
-            thumbnail: item.content_path || item.url || "",
-            time: item.length || item.duration || 0,
-            dimensions: item.resolution || item.dimensions || "",
-            dateAdded: item.datetime
-              ? new Date(
-                  typeof item.datetime === "number"
-                    ? item.datetime * 1000
-                    : item.datetime
-                ).toISOString()
-              : new Date().toISOString(),
-            size: item.size || 0,
-          }));
+          // const newContents: ContentItem[] = successfulUploads.map((item) => ({
+          //   id: item.content_id || item.id || "",
+          //   type: (item.content_type || item.type || "")?.startsWith("image")
+          //     ? "image"
+          //     : "video",
+          //   title: item.name || item.filename || "Untitled",
+          //   thumbnail: item.content_path || item.url || "",
+          //   time: item.length || item.duration || 0,
+          //   dimensions: item.resolution || item.dimensions || "",
+          //   dateAdded: item.datetime
+          //     ? new Date(
+          //         typeof item.datetime === "number"
+          //           ? item.datetime * 1000
+          //           : item.datetime
+          //       ).toISOString()
+          //     : new Date().toISOString(),
+          //   size: item.size || 0,
+          // }));
 
           // Show overall success checkmark
           setShowCheckmark(true);
@@ -483,7 +484,7 @@ const AddContent: React.FC<AddContentProps> = ({
                 <div className="flex-1">
                   <div className="flex items-center">
                     {previews[index]?.type === "image" ? (
-                      <img
+                      <Image
                         src={previews[index].url}
                         alt={file.name}
                         className="w-16 h-16 object-cover rounded mr-3"

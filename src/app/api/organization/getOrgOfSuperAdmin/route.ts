@@ -11,7 +11,7 @@ interface SuperAdminOrgData {
   // id: string;
   // name: string;
   // type: string;
-  [key: string]: any; // Remove this once you define specific properties
+  [key: string]: any|unknown; // Remove this once you define specific properties
 }
 
 interface ApiResponse {

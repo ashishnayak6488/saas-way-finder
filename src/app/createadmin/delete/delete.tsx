@@ -22,7 +22,7 @@ interface DeleteConfirmationDialogProps {
 
 export const DeleteConfirmationDialog: React.FC<
   DeleteConfirmationDialogProps
-> = ({ isOpen, organizationId, organizationName, onClose, onConfirm }) => {
+> = ({ isOpen, organizationName, onClose, onConfirm }) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
@@ -31,7 +31,7 @@ export const DeleteConfirmationDialog: React.FC<
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the
             organization
-            <strong className="font-semibold"> "{organizationName}"</strong>.
+            <strong className="font-semibold"> &quot;{organizationName}&quot;</strong>.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -78,10 +78,10 @@ export const deleteOrganization = async (
 
 export const deleteUserOrAdmin = async (
   user_uuid: string,
-  setOrganizations?: React.Dispatch<React.SetStateAction<any[]>>,
-  orgId?: string | null,
-  userRole?: string,
-  index?: number | null
+  // setOrganizations?: React.Dispatch<React.SetStateAction<any[]>>,
+  // orgId?: string | null,
+  // userRole?: string,
+  // index?: number | null
 ): Promise<boolean> => {
   try {
     const response = await fetch(`/api/organization/deleteUsers`, {

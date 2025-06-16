@@ -103,10 +103,15 @@ export default function Signup({ onLoginClick }: SignupProps) {
 
       toast.success("Account created successfully!", { id: loadingToast });
       router.push("/");
-    } catch (error: any) {
-      toast.error(error.message || "Registration failed. Please try again.", {
-        id: loadingToast,
-      });
+    } catch (error: unknown) {
+      // Handle error safely without using `any`
+      let errorMessage = "Registration failed. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+      toast.error(errorMessage, { id: loadingToast });
     }
 
     setIsLoading(false);

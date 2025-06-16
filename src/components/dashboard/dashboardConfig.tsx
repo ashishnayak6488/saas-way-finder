@@ -33,6 +33,7 @@ import CreateSuperAdmin from "@/app/createsuperadmin/page";
 import Main from "@/app/main/page";
 
 import MapEditor from "@/app/map-editor/page";
+// import BuildingManager from '@/app/components/BuildingManager';
 
 // Types
 export interface NavItem {

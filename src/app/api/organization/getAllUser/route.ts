@@ -13,7 +13,7 @@ interface UserData {
   // email: string;
   // role: string;
   // organizationId?: string;
-  [key: string]: any; // Remove this once you define specific properties
+  [key: string]: any|unknown; // Remove this once you define specific properties
 }
 
 interface ApiResponse {

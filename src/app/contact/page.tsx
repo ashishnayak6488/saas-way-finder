@@ -10,11 +10,9 @@ import {
   Clock,
   MapPin,
   Globe,
-  Headphones,
-  MessagesSquare,
 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+// import { Select } from "@/components/ui/Select";
 
 interface FormData {
   subject: string;
@@ -52,14 +50,14 @@ export default function Contact(): JSX.Element {
     response: "Average Response Time: 2 Hours",
   };
 
-  const departments: Department[] = [
-    { id: "technical", name: "Technical Support" },
-    { id: "billing", name: "Billing & Payments" },
-    { id: "general", name: "General Inquiry" },
-    { id: "sales", name: "Sales & Marketing" },
-    { id: "customer", name: "Customer Support" },
-    { id: "other", name: "Other" },
-  ];
+  // const departments: Department[] = [
+  //   { id: "technical", name: "Technical Support" },
+  //   { id: "billing", name: "Billing & Payments" },
+  //   { id: "general", name: "General Inquiry" },
+  //   { id: "sales", name: "Sales & Marketing" },
+  //   { id: "customer", name: "Customer Support" },
+  //   { id: "other", name: "Other" },
+  // ];
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
@@ -76,12 +74,12 @@ export default function Contact(): JSX.Element {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  // const handleSelectChange = (
+  //   e: React.ChangeEvent<HTMLSelectElement>
+  // ): void => {
+  //   const { name, value } = e.target;
+  //   setFormData((prev) => ({ ...prev, [name]: value }));
+  // };
 
   const handlePriorityChange = (
     e: React.ChangeEvent<HTMLInputElement>

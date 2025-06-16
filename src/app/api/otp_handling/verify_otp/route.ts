@@ -18,7 +18,7 @@ interface ApiResponse {
   message?: string;
   detail?: string;
   token?: string;
-  user?: any;
+  user?: any|unknown;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {

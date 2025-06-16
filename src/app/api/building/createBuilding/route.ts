@@ -27,7 +27,10 @@ export async function POST(req: NextRequest) {
       const cookieStore = cookies();
       const cookieName = process.env.SESSION_COOKIE_NAME || "digital-signage";
       token = (await cookieStore).get(cookieName)?.value;
-      console.log("Token from cookies fallback:", token ? "Found" : "Not found");
+      console.log(
+        "Token from cookies fallback:",
+        token ? "Found" : "Not found"
+      );
     }
 
     const controller = new AbortController();
@@ -43,7 +46,9 @@ export async function POST(req: NextRequest) {
           Accept: "application/json",
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
-          Cookie: `${process.env.SESSION_COOKIE_NAME || "digital-signage"}=${token}`,
+          Cookie: `${
+            process.env.SESSION_COOKIE_NAME || "digital-signage"
+          }=${token}`,
         },
         body: JSON.stringify(dataToSend),
         credentials: "include",
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     try {
       data = JSON.parse(responseText);
-    } catch (e) {
+    } catch (error: unknown) {
       console.error("Failed to parse response as JSON:", responseText);
       data = { message: responseText || "Invalid response from server" };
     }
@@ -89,7 +94,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        message: error instanceof Error ? error.message : "Internal Server Error",
+        message:
+          error instanceof Error ? error.message : "Internal Server Error",
       },
       { status: 500 }
     );

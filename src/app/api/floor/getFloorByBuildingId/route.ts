@@ -236,7 +236,7 @@ export async function GET(req: NextRequest) {
 
     try {
       data = JSON.parse(responseText);
-    } catch (e) {
+    } catch (error:unknown) {
       console.error("Failed to parse response as JSON:", responseText);
       data = { message: responseText || "Invalid response from server" };
     }
@@ -253,7 +253,7 @@ export async function GET(req: NextRequest) {
 
     // Transform backend response to match frontend expectations
     if (data.data && data.data.floors) {
-      const transformedFloors = data.data.floors.map((floor: any) => ({
+      const transformedFloors = data.data.floors.map((floor: any|unknown) => ({
         floor_id: floor.floor_id,
         label: floor.name, // Map name to label for frontend
         order: floor.floor_number, // Map floor_number to order for frontend

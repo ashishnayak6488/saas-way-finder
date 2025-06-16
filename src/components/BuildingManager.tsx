@@ -35,8 +35,15 @@ interface BuildingManagerProps {
   buildings: Building[];
   selectedBuilding: Building | null;
   onBuildingSelect: (building: Building) => void;
-  onBuildingCreate: (name: string, address: string, description: string) => void; // Updated signature
-  onBuildingUpdate: (buildingId: string, updates: { name?: string; address?: string; description?: string }) => void;
+  onBuildingCreate: (
+    name: string,
+    address: string,
+    description: string
+  ) => void; // Updated signature
+  onBuildingUpdate: (
+    buildingId: string,
+    updates: { name?: string; address?: string; description?: string }
+  ) => void;
   onBuildingDelete: (buildingId: string) => void;
   onFloorAdd: (
     buildingId: string,
@@ -53,7 +60,6 @@ interface BuildingManagerProps {
 }
 
 // Update all references from .id to .building_id and .floor_id throughout the component
-
 
 export const BuildingManager: React.FC<BuildingManagerProps> = ({
   buildings,
@@ -73,6 +79,7 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
   const [expandedBuildings, setExpandedBuildings] = useState<Set<string>>(
     new Set()
   );
+
   const [newBuildingName, setNewBuildingName] = useState<string>("");
   const [newBuildingAddress, setNewBuildingAddress] = useState<string>("");
   const [newBuildingDescription, setNewBuildingDescription] =
@@ -106,11 +113,18 @@ export const BuildingManager: React.FC<BuildingManagerProps> = ({
   const [editFloorBuildingId, setEditFloorBuildingId] = useState<string>("");
 
   // Add state for confirmation modal in BuildingManager component
-const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<boolean>(false);
-const [buildingToDelete, setBuildingToDelete] = useState<Building | null>(null);
-// Add additional state for floor deletion confirmation
-const [showFloorDeleteConfirmation, setShowFloorDeleteConfirmation] = useState<boolean>(false);
-const [floorToDelete, setFloorToDelete] = useState<{ floor: Floor; buildingId: string } | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] =
+    useState<boolean>(false);
+  const [buildingToDelete, setBuildingToDelete] = useState<Building | null>(
+    null
+  );
+  // Add additional state for floor deletion confirmation
+  const [showFloorDeleteConfirmation, setShowFloorDeleteConfirmation] =
+    useState<boolean>(false);
+  const [floorToDelete, setFloorToDelete] = useState<{
+    floor: Floor;
+    buildingId: string;
+  } | null>(null);
 
   const handleCreateBuilding = () => {
     if (newBuildingName.trim()) {
@@ -224,48 +238,43 @@ const [floorToDelete, setFloorToDelete] = useState<{ floor: Floor; buildingId: s
     setIsFloorDialogOpen(true);
   };
 
-
   // Add confirmation handler function
-const handleDeleteClick = (building: Building) => {
-  setBuildingToDelete(building);
-  setShowDeleteConfirmation(true);
-};
+  const handleDeleteClick = (building: Building) => {
+    setBuildingToDelete(building);
+    setShowDeleteConfirmation(true);
+  };
 
-const handleConfirmDelete = () => {
-  if (buildingToDelete) {
-    onBuildingDelete(buildingToDelete.building_id);
+  const handleConfirmDelete = () => {
+    if (buildingToDelete) {
+      onBuildingDelete(buildingToDelete.building_id);
+      setShowDeleteConfirmation(false);
+      setBuildingToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
     setShowDeleteConfirmation(false);
     setBuildingToDelete(null);
-  }
-};
+  };
 
-const handleCancelDelete = () => {
-  setShowDeleteConfirmation(false);
-  setBuildingToDelete(null);
-};
+  // Add floor delete confirmation handlers
+  const handleFloorDeleteClick = (building: Building, floor: Floor) => {
+    setFloorToDelete({ floor, buildingId: building.building_id });
+    setShowFloorDeleteConfirmation(true);
+  };
 
+  const handleConfirmFloorDelete = () => {
+    if (floorToDelete) {
+      onFloorDelete(floorToDelete.buildingId, floorToDelete.floor.floor_id);
+      setShowFloorDeleteConfirmation(false);
+      setFloorToDelete(null);
+    }
+  };
 
-
-// Add floor delete confirmation handlers
-const handleFloorDeleteClick = (building: Building, floor: Floor) => {
-  setFloorToDelete({ floor, buildingId: building.building_id });
-  setShowFloorDeleteConfirmation(true);
-};
-
-const handleConfirmFloorDelete = () => {
-  if (floorToDelete) {
-    onFloorDelete(floorToDelete.buildingId, floorToDelete.floor.floor_id);
+  const handleCancelFloorDelete = () => {
     setShowFloorDeleteConfirmation(false);
     setFloorToDelete(null);
-  }
-};
-
-const handleCancelFloorDelete = () => {
-  setShowFloorDeleteConfirmation(false);
-  setFloorToDelete(null);
-};
-
-
+  };
 
   return (
     <div className="space-y-6">
@@ -425,19 +434,21 @@ const handleCancelFloorDelete = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {buildings.map((building) => (
+          {(buildings || []).map((building) => (
             <Card key={building.building_id} className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div
                     className="flex items-center space-x-3 cursor-pointer flex-1"
-                    onClick={() => toggleBuildingExpansion(building.building_id)}
+                    onClick={() =>
+                      toggleBuildingExpansion(building.building_id)
+                    }
                   >
-                    {/* {expandedBuildings.has(building.building_id) ? (
+                    {expandedBuildings.has(building.building_id) ? (
                       <ChevronDown className="h-5 w-5 text-gray-400" />
                     ) : (
                       <ChevronRight className="h-5 w-5 text-gray-400" />
-                    )} */}
+                    )}
                     <div className="bg-blue-100 p-2 rounded-lg">
                       <BuildingIcon className="h-5 w-5 text-blue-600" />
                     </div>
@@ -771,7 +782,6 @@ const handleCancelFloorDelete = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
 
       {showDeleteConfirmation && buildingToDelete && (
         <ConfirmationModal

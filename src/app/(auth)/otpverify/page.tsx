@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 
 // Define props type for Button component (from previous Button.tsx)
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?:
-    | "primary"
-    | "secondary"
-    | "success"
-    | "danger"
-    | "neutral"
-    | "outline";
-  className?: string;
-}
+// interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+//   variant?:
+//     | "primary"
+//     | "secondary"
+//     | "success"
+//     | "danger"
+//     | "neutral"
+//     | "outline";
+//   className?: string;
+// }
 
 // Extend window interface to include countdownTimer
 declare global {

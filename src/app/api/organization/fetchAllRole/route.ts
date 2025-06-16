@@ -9,7 +9,7 @@ interface AuthToken {
 // Define the API response type
 interface ApiResponse {
   success?: boolean;
-  data?: any; // Adjust based on actual role data structure if known
+  data?: unknown|any; // Adjust based on actual role data structure if known
   detail?: string;
   message?: string; // For error responses
 }
@@ -28,7 +28,7 @@ class ApiError extends Error {
 // Assume getAuthToken returns a Promise<AuthToken | null>
 declare function getAuthToken(): Promise<AuthToken | null>;
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get auth token
     const token = await getAuthToken();
