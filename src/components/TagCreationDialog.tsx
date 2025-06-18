@@ -15,7 +15,7 @@ interface TagCreationDialogProps {
 }
 
 const categories = [
-  'Entrance',
+  'entrance',
   'Exit',
   'Store',
   'Room',

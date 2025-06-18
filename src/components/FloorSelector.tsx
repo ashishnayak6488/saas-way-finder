@@ -43,10 +43,10 @@ export const FloorSelector: React.FC<FloorSelectorProps> = ({
       >
         {sortedFloors.map((floor) => (
           <DropdownMenuItem
-            key={floor.id}
+            key={floor.floor_id}
             onClick={() => onFloorSelect(floor)}
             className={`cursor-pointer hover:bg-gray-50 ${
-              selectedFloor?.id === floor.id ? "bg-blue-50 text-blue-900" : ""
+              selectedFloor?.floor_id === floor.floor_id ? "bg-blue-50 text-blue-900" : ""
             }`}
           >
             <div className="flex items-center space-x-3 w-full">
@@ -62,7 +62,7 @@ export const FloorSelector: React.FC<FloorSelectorProps> = ({
                 />
               </div>
               <span className="truncate text-sm">{floor.label}</span>
-              {selectedFloor?.id === floor.id && (
+              {selectedFloor?.floor_id === floor.floor_id && (
                 <div className="w-2 h-2 bg-blue-600 rounded-full ml-auto flex-shrink-0" />
               )}
             </div>

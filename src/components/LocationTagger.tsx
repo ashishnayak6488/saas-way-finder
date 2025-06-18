@@ -21,20 +21,42 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { MapPin, Circle, Square, Edit2, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
+
+
+// export interface TaggedLocation {
+//   id: string;
+//   name: string;
+//   category: string;
+//   shape: "circle" | "rectangle";
+//   x: number;
+//   y: number;
+//   radius?: number;
+//   width?: number;
+//   height?: number;
+//   logoUrl?: string;
+//   color?: string;
+//   floorId?: string; // Add floorId to associate tags with specific floors
+// }
+
+// Update the TaggedLocation interface
 export interface TaggedLocation {
-  id: string;
+  id: string; // This will map to location_id from API
   name: string;
   category: string;
+  floorId: string; // This will map to floor_id from API
   shape: "circle" | "rectangle";
   x: number;
   y: number;
-  radius?: number;
   width?: number;
   height?: number;
-  logoUrl?: string;
+  radius?: number;
+  logoUrl?: string; // This will map to logo_url from API
   color?: string;
-  floorId?: string; // Add floorId to associate tags with specific floors
+  textColor?: string; // This will map to text_color from API
+  isPublished?: boolean; // This will map to is_published from API
+  description?: string;
 }
+
 
 interface LocationTaggerProps {
   isTagMode: boolean;

@@ -31,6 +31,8 @@ export async function POST(
     urlEncodedData.append("username", username);
     urlEncodedData.append("password", password);
 
+    console.log("Login Base url:", process.env.NEXT_PUBLIC_API_BASE_URL);
+
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL}/passauth`,
       {
