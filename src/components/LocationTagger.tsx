@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -22,22 +22,6 @@ import { Badge } from "@/components/ui/Badge";
 import { MapPin, Circle, Square, Edit2, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
 
-
-// export interface TaggedLocation {
-//   id: string;
-//   name: string;
-//   category: string;
-//   shape: "circle" | "rectangle";
-//   x: number;
-//   y: number;
-//   radius?: number;
-//   width?: number;
-//   height?: number;
-//   logoUrl?: string;
-//   color?: string;
-//   floorId?: string; // Add floorId to associate tags with specific floors
-// }
-
 // Update the TaggedLocation interface
 export interface TaggedLocation {
   id: string; // This will map to location_id from API
@@ -57,6 +41,17 @@ export interface TaggedLocation {
   description?: string;
 }
 
+
+// Add this near the top of the file
+const LOCATION_CATEGORIES = [
+  { value: 'room', label: 'Room' },
+  { value: 'facility', label: 'Facility' },
+  { value: 'office', label: 'Office' },
+  { value: 'meeting', label: 'Meeting Room' },
+  { value: 'dining', label: 'Dining' },
+  { value: 'study', label: 'Study Area' },
+  { value: 'entrance', label: 'Entrance' }
+];
 
 interface LocationTaggerProps {
   isTagMode: boolean;
@@ -84,33 +79,83 @@ export const LocationTagger: React.FC<LocationTaggerProps> = ({
     logoUrl: "",
   });
 
-  // Filter tags by current floor
+  // Filter tags by current floor and ensure they have valid IDs
   const currentFloorTags = currentFloorId
-    ? tags.filter((tag) => tag.floorId === currentFloorId || !tag.floorId)
-    : tags;
+    ? tags.filter((tag) => 
+        tag && 
+        tag.id && 
+        (tag.floorId === currentFloorId || !tag.floorId)
+      )
+    : tags.filter((tag) => tag && tag.id);
+
+  // Debug logging (moved outside JSX)
+  useEffect(() => {
+    console.log("Current floor tags:", currentFloorTags);
+    currentFloorTags.forEach((tag, index) => {
+      console.log(`Tag ${index}:`, tag);
+      if (!tag.id) {
+        console.error(`Tag at index ${index} has no ID:`, tag);
+      }
+    });
+  }, [currentFloorTags]);
 
   const handleEditStart = (tag: TaggedLocation) => {
+    if (!tag || !tag.id) {
+      console.error("Cannot edit tag: invalid tag data", tag);
+      return;
+    }
+    
     setEditingTag(tag);
     setEditForm({
-      name: tag.name,
-      category: tag.category,
+      name: tag.name || "",
+      category: tag.category || "",
       logoUrl: tag.logoUrl || "",
     });
   };
 
-  const handleEditSave = () => {
-    if (editingTag && onEditTag) {
-      const updatedTag = {
-        ...editingTag,
-        name: editForm.name,
-        category: editForm.category,
-        logoUrl: editForm.logoUrl || undefined,
-      };
-      onEditTag(updatedTag);
-      setEditingTag(null);
-      setEditForm({ name: "", category: "", logoUrl: "" });
-    }
-  };
+  // const handleEditSave = () => {
+  //   if (editingTag && onEditTag && editingTag.id) {
+  //     const updatedTag = {
+  //       ...editingTag,
+  //       name: editForm.name,
+  //       category: editForm.category,
+  //       logoUrl: editForm.logoUrl || undefined,
+  //     };
+  //     onEditTag(updatedTag);
+  //     setEditingTag(null);
+  //     setEditForm({ name: "", category: "", logoUrl: "" });
+  //   }
+  // };
+
+  // Update the editing form to include category selection
+
+const handleEditSave = async () => {
+  if (editingTag && onEditTag) {
+    const updatedTag = {
+      ...editingTag,
+      name: editForm.name,
+      category: editForm.category, // Make sure this is included
+      logoUrl: editForm.logoUrl,
+      // description: editForm.description,
+      // color: editForm.color,
+      // textColor: editForm.textColor,
+      // isPublished: editForm.isPublished,
+    };
+    
+    await onEditTag(updatedTag);
+    setEditingTag(null);
+    setEditForm({
+      name: '',
+      category: '',
+      logoUrl: '',
+      // description: '',
+      // color: '#f59e0b',
+      // textColor: '#000000',
+      // isPublished: true,
+    });
+  }
+};
+
 
   const handleEditCancel = () => {
     setEditingTag(null);
@@ -140,7 +185,8 @@ export const LocationTagger: React.FC<LocationTaggerProps> = ({
       entrance: "bg-red-100 text-red-800",
       exit: "bg-yellow-100 text-yellow-800",
     };
-    return colors[category.toLowerCase()] || "bg-gray-100 text-gray-800";
+
+    return colors[category?.toLowerCase()] || "bg-gray-100 text-gray-800";
   };
 
   return (
@@ -199,7 +245,9 @@ export const LocationTagger: React.FC<LocationTaggerProps> = ({
                 placeholder="Location name"
               />
             </div>
-            <div>
+
+
+            {/* <div>
               <Label htmlFor="edit-category">Category</Label>
               <Select
                 value={editForm.category}
@@ -221,7 +269,26 @@ export const LocationTagger: React.FC<LocationTaggerProps> = ({
                   <SelectItem value="exit">Exit</SelectItem>
                 </SelectContent>
               </Select>
+            </div> */}
+
+
+            <div>
+              <Label htmlFor="edit-category">Category</Label>
+              <Select value={editForm.category} onValueChange={(value) => setEditForm({...editForm, category: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCATION_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+
             <div>
               <Label htmlFor="edit-logo">Logo (Optional)</Label>
               <div className="flex gap-2">
@@ -241,6 +308,8 @@ export const LocationTagger: React.FC<LocationTaggerProps> = ({
                   <Image
                     src={editForm.logoUrl}
                     alt="Logo preview"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 object-cover rounded border"
                   />
                 </div>
@@ -263,64 +332,77 @@ export const LocationTagger: React.FC<LocationTaggerProps> = ({
               Tagged Locations ({currentFloorTags.length})
             </h4>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {currentFloorTags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {tag.logoUrl ? (
-                      <Image
-                        src={tag.logoUrl}
-                        alt={tag.name}
-                        className="w-6 h-6 object-cover rounded"
-                      />
-                    ) : tag.shape === "circle" ? (
-                      <Circle className="h-4 w-4 text-gray-500" />
-                    ) : (
-                      <Square className="h-4 w-4 text-gray-500" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {tag.name}
+              {currentFloorTags.map((tag, index) => {
+                // Ensure we have a valid key
+                const tagKey = tag?.id || `tag-${index}-${tag?.name || 'unknown'}`;
+                
+                if (!tag) {
+                  console.error(`Invalid tag at index ${index}:`, tag);
+                  return null;
+                }
+
+                return (
+                  <div
+                    key={tagKey}
+                    className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {tag.logoUrl ? (
+                        <Image
+                          src={tag.logoUrl}
+                          alt={tag.name || 'Location'}
+                          width={24}
+                          height={24}
+                          className="w-6 h-6 object-cover rounded"
+                        />
+                      ) : tag.shape === "circle" ? (
+                        <Circle className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <Square className="h-4 w-4 text-gray-500" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {tag.name || 'Unnamed Location'}
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${getCategoryColor(tag.category || 'unknown')}`}
+                        >
+                          {tag.category || 'Unknown'}
+                        </Badge>
                       </div>
-                      <Badge
-                        variant="secondary"
-                        className={`text-xs ${getCategoryColor(tag.category)}`}
-                      >
-                        {tag.category}
-                      </Badge>
+                      {tag.color && (
+                        <div
+                          className="w-4 h-4 rounded-full border border-gray-300"
+                          style={{ backgroundColor: tag.color }}
+                          title={`Tag color: ${tag.color}`}
+                        />
+                      )}
                     </div>
-                    {tag.color && (
-                      <div
-                        className="w-4 h-4 rounded-full border border-gray-300"
-                        style={{ backgroundColor: tag.color }}
-                        title={`Tag color: ${tag.color}`}
-                      />
-                    )}
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditStart(tag)}
-                      className="h-7 w-7 p-0"
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                    {onDeleteTag && (
+                    <div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDeleteTag(tag.id)}
-                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                        onClick={() => handleEditStart(tag)}
+                        className="h-7 w-7 p-0"
+                        disabled={!tag.id}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Edit2 className="h-3 w-3" />
                       </Button>
-                    )}
+                      {onDeleteTag && tag.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteTag(tag.id)}
+                          className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

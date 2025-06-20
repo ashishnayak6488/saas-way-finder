@@ -25,7 +25,7 @@ export type VerticalConnectorType =
   | "elevator"
   | "stairs"
   | "escalator"
-  | "emergency-exit";
+  | "emergency_exit"; // Updated to match backend
 
 export interface VerticalConnector {
   id: string;
@@ -108,7 +108,7 @@ export const VerticalConnectorTagger: React.FC<
         return <Building className="h-4 w-4" />;
       case "escalator":
         return <ArrowUp className="h-4 w-4" />;
-      case "emergency-exit":
+      case "emergency_exit":
         return <AlertTriangle className="h-4 w-4" />;
       default:
         return <Building className="h-4 w-4" />;
@@ -120,9 +120,19 @@ export const VerticalConnectorTagger: React.FC<
       elevator: "bg-blue-100 text-blue-800",
       stairs: "bg-green-100 text-green-800",
       escalator: "bg-purple-100 text-purple-800",
-      "emergency-exit": "bg-red-100 text-red-800",
+      "emergency_exit": "bg-red-100 text-red-800",
     };
     return colors[type] || "bg-gray-100 text-gray-800";
+  };
+
+  const getConnectorTypeLabel = (type: VerticalConnectorType) => {
+    const labels: { [key: string]: string } = {
+      elevator: "Elevator",
+      stairs: "Stairs",
+      escalator: "Escalator",
+      emergency_exit: "Emergency Exit",
+    };
+    return labels[type] || type;
   };
 
   const currentFloorConnectors = connectors.filter(
@@ -204,7 +214,7 @@ export const VerticalConnectorTagger: React.FC<
                       Escalator
                     </div>
                   </SelectItem>
-                  <SelectItem value="emergency-exit">
+                  <SelectItem value="emergency_exit">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" />
                       Emergency Exit
@@ -259,7 +269,7 @@ export const VerticalConnectorTagger: React.FC<
                             connector.type
                           )}`}
                         >
-                          {connector.type}
+                          {getConnectorTypeLabel(connector.type)}
                         </Badge>
                         <span className="text-xs text-gray-500">
                           ID: {connector.sharedId}

@@ -53,11 +53,21 @@ export const VerticalConnectorCreationDialog: React.FC<VerticalConnectorCreation
         return <Building className="h-4 w-4" />;
       case 'escalator':
         return <ArrowUp className="h-4 w-4" />;
-      case 'emergency-exit':
+      case 'emergency_exit':
         return <AlertTriangle className="h-4 w-4" />;
       default:
         return <Building className="h-4 w-4" />;
     }
+  };
+
+  const getTypeLabel = (connectorType: VerticalConnectorType) => {
+    const labels: { [key: string]: string } = {
+      elevator: "Elevator",
+      stairs: "Stairs",
+      escalator: "Escalator",
+      emergency_exit: "Emergency Exit",
+    };
+    return labels[connectorType] || connectorType;
   };
 
   return (
@@ -95,25 +105,25 @@ export const VerticalConnectorCreationDialog: React.FC<VerticalConnectorCreation
                 <SelectItem value="elevator">
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4" />
-                    Elevator
+                    {getTypeLabel("elevator")}
                   </div>
                 </SelectItem>
                 <SelectItem value="stairs">
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4" />
-                    Stairs
+                    {getTypeLabel("stairs")}
                   </div>
                 </SelectItem>
                 <SelectItem value="escalator">
                   <div className="flex items-center gap-2">
                     <ArrowUp className="h-4 w-4" />
-                    Escalator
+                    {getTypeLabel("escalator")}
                   </div>
                 </SelectItem>
-                <SelectItem value="emergency-exit">
+                <SelectItem value="emergency_exit">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    Emergency Exit
+                    {getTypeLabel("emergency_exit")}
                   </div>
                 </SelectItem>
               </SelectContent>

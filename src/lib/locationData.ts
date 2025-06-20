@@ -1,203 +1,3 @@
-// import { toast } from "react-hot-toast";
-
-// export interface LocationData {
-//   location_id: string;
-//   name: string;
-//   category: string;
-//   floor_id: string;
-//   shape: 'circle' | 'rectangle';
-//   x: number;
-//   y: number;
-//   width?: number;
-//   height?: number;
-//   radius?: number;
-//   logo_url?: string;
-//   color: string;
-//   text_color: string;
-//   is_published: boolean;
-//   description?: string;
-//   created_by?: string;
-//   datetime: number;
-//   status: string;
-// }
-
-// export interface CreateLocationRequest {
-//   name: string;
-//   category: string;
-//   floor_id: string;
-//   shape: 'circle' | 'rectangle';
-//   x: number;
-//   y: number;
-//   width?: number;
-//   height?: number;
-//   radius?: number;
-//   logoUrl?: string;
-//   color?: string;
-//   text_color?: string;
-//   is_published?: boolean;
-//   description?: string;
-// }
-
-// // Create a new location
-// export const createLocation = async (locationData: CreateLocationRequest): Promise<LocationData | null> => {
-//   try {
-//     const response = await fetch("/api/location/createLocation", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(locationData),
-//       credentials: "include",
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       toast.error(data.error || "Failed to create location");
-//       return null;
-//     }
-
-//     toast.success("Location created successfully");
-//     return data.data;
-//   } catch (error) {
-//     console.error("Error creating location:", error);
-//     toast.error("Failed to create location");
-//     return null;
-//   }
-// };
-
-// // Get locations by floor ID
-// export const getLocationsByFloorId = async (floorId: string): Promise<LocationData[]> => {
-//   try {
-//     const response = await fetch(`/api/location/getLocation?floor_id=${floorId}`, {
-//       method: "GET",
-//       credentials: "include",
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       console.error("Failed to fetch locations:", data.error);
-//       return [];
-//     }
-
-//     return data.data || [];
-//   } catch (error) {
-//     console.error("Error fetching locations:", error);
-//     return [];
-//   }
-// };
-
-// // Get locations by building ID
-// export const getLocationsByBuildingId = async (buildingId: string): Promise<LocationData[]> => {
-//   try {
-//     const response = await fetch(`/api/location?building_id=${buildingId}`, {
-//       method: "GET",
-//       credentials: "include",
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       console.error("Failed to fetch locations:", data.error);
-//       return [];
-//     }
-
-//     return data.data || [];
-//   } catch (error) {
-//     console.error("Error fetching locations:", error);
-//     return [];
-//   }
-// };
-
-// // Get published locations only
-// export const getPublishedLocations = async (floorId?: string): Promise<LocationData[]> => {
-//   try {
-//     const params = new URLSearchParams();
-//     params.append('is_published', 'true');
-//     if (floorId) params.append('floor_id', floorId);
-
-//     const response = await fetch(`/api/location?${params.toString()}`, {
-//       method: "GET",
-//       credentials: "include",
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       console.error("Failed to fetch published locations:", data.error);
-//       return [];
-//     }
-
-//     return data.data || [];
-//   } catch (error) {
-//     console.error("Error fetching published locations:", error);
-//     return [];
-//   }
-// };
-
-// // Update location
-// export const updateLocation = async (
-//   locationId: string, 
-//   updates: Partial<CreateLocationRequest>
-// ): Promise<LocationData | null> => {
-//   try {
-//     const response = await fetch(`/api/location/${locationId}`, {
-//       method: "PUT",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(updates),
-//       credentials: "include",
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       toast.error(data.error || "Failed to update location");
-//       return null;
-//     }
-
-//     toast.success("Location updated successfully");
-//     return data.data;
-//   } catch (error) {
-//     console.error("Error updating location:", error);
-//     toast.error("Failed to update location");
-//     return null;
-//   }
-// };
-
-// // Delete location
-// export const deleteLocation = async (locationId: string): Promise<boolean> => {
-//   try {
-//     const response = await fetch(`/api/location/${locationId}`, {
-//       method: "DELETE",
-//       credentials: "include",
-//     });
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       toast.error(data.error || "Failed to delete location");
-//       return false;
-//     }
-
-//     toast.success("Location deleted successfully");
-//     return true;
-//   } catch (error) {
-//     console.error("Error deleting location:", error);
-//     toast.error("Failed to delete location");
-//     return false;
-//   }
-// };
-
-
-
-
-
-
-
-
 import { toast } from "react-hot-toast";
 
 export interface LocationData {
@@ -223,7 +23,7 @@ export interface LocationData {
 
 export interface CreateLocationRequest {
   name: string;
-  category: string;
+  category: string; // This should match the backend enum values
   floor_id: string;
   shape: 'circle' | 'rectangle';
   x: number;
@@ -231,7 +31,7 @@ export interface CreateLocationRequest {
   width?: number;
   height?: number;
   radius?: number;
-  logoUrl?: string;
+  logoUrl?: string; // Note: frontend uses logoUrl, backend expects logo_url
   color?: string;
   text_color?: string;
   is_published?: boolean;
@@ -256,11 +56,78 @@ export interface UpdateLocationRequest {
 }
 
 // Create a new location
+// export const createLocation = async (locationData: CreateLocationRequest): Promise<LocationData | null> => {
+//   try {
+//     // Validate required fields
+//     if (!locationData.name || !locationData.category || !locationData.floor_id) {
+//       toast.error("Missing required fields: name, category, or floor_id");
+//       return null;
+//     }
+
+//     // Validate shape-specific requirements
+//     if (locationData.shape === 'circle' && !locationData.radius) {
+//       toast.error("Radius is required for circle shape");
+//       return null;
+//     }
+
+//     if (locationData.shape === 'rectangle' && (!locationData.width || !locationData.height)) {
+//       toast.error("Width and height are required for rectangle shape");
+//       return null;
+//     }
+    
+//     const response = await fetch("/api/location/createLocation", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(locationData),
+//       credentials: "include",
+//     });
+
+//     const responseText = await response.text();
+
+//     if (!response.ok) {
+//       let errorData;
+//       try {
+//         errorData = JSON.parse(responseText);
+//         console.error('API Error Details:', errorData);
+        
+//         if (errorData.details && Array.isArray(errorData.details)) {
+//           const errorMessages = errorData.details.map((err: any) => 
+//             `${err.loc?.join('.')} - ${err.msg}`
+//           ).join(', ');
+//           toast.error(`Validation Error: ${errorMessages}`);
+//         } else {
+//           toast.error(errorData.error || "Failed to create location");
+//         }
+//       } catch (e) {
+//         toast.error(`Server Error: ${responseText}`);
+//       }
+//       return null;
+//     }
+
+//     const data = JSON.parse(responseText);
+//     toast.success("Location created successfully");
+//     return data.data;
+//   } catch (error) {
+//     console.error("Error creating location:", error);
+//     toast.error("Failed to create location");
+//     return null;
+//   }
+// };  
+
 export const createLocation = async (locationData: CreateLocationRequest): Promise<LocationData | null> => {
   try {
     // Validate required fields
     if (!locationData.name || !locationData.category || !locationData.floor_id) {
       toast.error("Missing required fields: name, category, or floor_id");
+      return null;
+    }
+
+    // Validate category against allowed values
+    const allowedCategories = ['room', 'facility', 'office', 'meeting', 'dining', 'study', 'entrance'];
+    if (!allowedCategories.includes(locationData.category)) {
+      toast.error("Invalid category selected");
       return null;
     }
 
@@ -274,44 +141,29 @@ export const createLocation = async (locationData: CreateLocationRequest): Promi
       toast.error("Width and height are required for rectangle shape");
       return null;
     }
-
-    console.log('Creating location with validated data:', JSON.stringify(locationData, null, 2));
     
     const response = await fetch("/api/location/createLocation", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(locationData),
-      credentials: "include",
+      body: JSON.stringify({
+        ...locationData,
+        // Map frontend field names to backend field names
+        logo_url: locationData.logoUrl, // Convert logoUrl to logo_url
+        logoUrl: undefined, // Remove the frontend field
+      }),
     });
 
-    const responseText = await response.text();
-    console.log('API Response:', responseText);
-
     if (!response.ok) {
-      let errorData;
-      try {
-        errorData = JSON.parse(responseText);
-        console.error('API Error Details:', errorData);
-        
-        if (errorData.details && Array.isArray(errorData.details)) {
-          const errorMessages = errorData.details.map((err: any) => 
-            `${err.loc?.join('.')} - ${err.msg}`
-          ).join(', ');
-          toast.error(`Validation Error: ${errorMessages}`);
-        } else {
-          toast.error(errorData.error || "Failed to create location");
-        }
-      } catch (e) {
-        toast.error(`Server Error: ${responseText}`);
-      }
+      const errorData = await response.json();
+      toast.error(errorData.detail || "Failed to create location");
       return null;
     }
 
-    const data = JSON.parse(responseText);
+    const result = await response.json();
     toast.success("Location created successfully");
-    return data.data;
+    return result.data;
   } catch (error) {
     console.error("Error creating location:", error);
     toast.error("Failed to create location");
@@ -319,15 +171,15 @@ export const createLocation = async (locationData: CreateLocationRequest): Promi
   }
 };
 
-// Update location
+
+
 export const updateLocation = async (
   locationId: string, 
   updates: UpdateLocationRequest
 ): Promise<LocationData | null> => {
   try {
-    console.log('Updating location:', locationId, 'with data:', JSON.stringify(updates, null, 2));
     
-    // Validate shape-specific requirements if shape is being updated
+    // Validate shape-specific requirements
     if (updates.shape === 'circle' && updates.radius === undefined) {
       toast.error("Radius is required for circle shape");
       return null;
@@ -337,8 +189,8 @@ export const updateLocation = async (
       toast.error("Width and height are required for rectangle shape");
       return null;
     }
-
-    const response = await fetch(`/api/location/updateLocation/${locationId}`, {
+    // Use query parameter instead of path parameter
+    const response = await fetch(`/api/location/updateLocation?locationId=${locationId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -347,13 +199,10 @@ export const updateLocation = async (
       credentials: "include",
     });
 
-    const responseText = await response.text();
-    console.log('Update API Response:', responseText);
-
     if (!response.ok) {
       let errorData;
       try {
-        errorData = JSON.parse(responseText);
+        errorData = await response.json();
         console.error('Update API Error Details:', errorData);
         
         if (errorData.details && Array.isArray(errorData.details)) {
@@ -365,59 +214,86 @@ export const updateLocation = async (
           toast.error(errorData.error || "Failed to update location");
         }
       } catch (e) {
-        toast.error(`Server Error: ${responseText}`);
+        const errorText = await response.text();
+        toast.error(`Server Error: ${errorText}`);
       }
       return null;
     }
 
-    const data = JSON.parse(responseText);
-    toast.success("Location updated successfully");
-    return data.data;
+    const responseData = await response.json();
+    // Extract the location data from the structured response
+    if (responseData && responseData.status === "success" && responseData.data) {
+      const locationData = responseData.data;      
+      // Convert the response to match our LocationData interface
+      const convertedLocationData: LocationData = {
+        location_id: locationData.location_id,
+        name: locationData.name,
+        category: locationData.category,
+        floor_id: locationData.floor_id,
+        shape: locationData.shape as 'circle' | 'rectangle',
+        x: locationData.x,
+        y: locationData.y,
+        width: locationData.width,
+        height: locationData.height,
+        radius: locationData.radius,
+        logo_url: locationData.logo_url,
+        color: locationData.color,
+        text_color: locationData.text_color,
+        is_published: locationData.is_published,
+        description: locationData.description,
+        created_by: locationData.created_by,
+        datetime: locationData.datetime,
+        status: locationData.status
+      };
+
+      toast.success("Location updated successfully!");
+      return convertedLocationData;
+    } else {
+      console.error("Invalid response structure:", responseData);
+      toast.error("Invalid response from server");
+      return null;
+    }
+
   } catch (error) {
-    console.error("Error updating location:", error);
+    console.error('Error updating location:', error);
     toast.error("Failed to update location");
     return null;
   }
 };
-
-// Delete location
 export const deleteLocation = async (locationId: string): Promise<boolean> => {
   try {
-    console.log('Deleting location:', locationId);
     
-    const response = await fetch(`/api/location/deleteLocation/${locationId}`, {
+    const response = await fetch(`/api/location/deleteLocation?locationId=${locationId}`, {
       method: "DELETE",
       credentials: "include",
     });
 
-    const responseText = await response.text();
-    console.log('Delete API Response:', responseText);
-
     if (!response.ok) {
       let errorData;
       try {
-        errorData = JSON.parse(responseText);
+        errorData = await response.json();
         console.error('Delete API Error Details:', errorData);
         toast.error(errorData.error || "Failed to delete location");
       } catch (e) {
-        toast.error(`Server Error: ${responseText}`);
+        const errorText = await response.text();
+        console.error('Delete API Error Text:', errorText);
+        toast.error(`Server Error: ${errorText}`);
       }
       return false;
     }
 
     // Handle successful deletion
-    let data = {};
-    if (responseText.trim()) {
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        // If response is not JSON, assume success
-        console.log('Delete successful - non-JSON response');
-      }
-    }
+    const responseData = await response.json();
 
-    toast.success("Location deleted successfully");
-    return true;
+    // Check if the response indicates success
+    if (responseData && (responseData.status === 'success' || responseData.deleted_id)) {
+      toast.success("Location deleted successfully");
+      return true;
+    } else {
+      console.error('Unexpected delete response format:', responseData);
+      toast.error("Location deletion status unclear");
+      return false;
+    }
   } catch (error) {
     console.error("Error deleting location:", error);
     toast.error("Failed to delete location");
@@ -427,10 +303,8 @@ export const deleteLocation = async (locationId: string): Promise<boolean> => {
 
 
 
-// Get locations by floor ID
 export const getLocationsByFloorId = async (floorId: string): Promise<LocationData[]> => {
     try {
-      console.log('Fetching locations for floor:', floorId);
       
       const response = await fetch(`/api/location/getLocation?floor_id=${floorId}`, {
         method: "GET",
@@ -438,7 +312,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       });
   
       const responseText = await response.text();
-      console.log('Get locations API Response:', responseText);
   
       if (!response.ok) {
         let errorData;
@@ -452,7 +325,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       }
   
       const data = JSON.parse(responseText);
-      console.log(`Loaded ${data.data?.length || 0} locations for floor ${floorId}`);
       return data.data || [];
     } catch (error) {
       console.error("Error fetching locations:", error);
@@ -463,7 +335,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
   // Get locations by building ID
   export const getLocationsByBuildingId = async (buildingId: string): Promise<LocationData[]> => {
     try {
-      console.log('Fetching locations for building:', buildingId);
       
       const response = await fetch(`/api/location?building_id=${buildingId}`, {
         method: "GET",
@@ -471,7 +342,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       });
   
       const responseText = await response.text();
-      console.log('Get building locations API Response:', responseText);
   
       if (!response.ok) {
         let errorData;
@@ -485,7 +355,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       }
   
       const data = JSON.parse(responseText);
-      console.log(`Loaded ${data.data?.length || 0} locations for building ${buildingId}`);
       return data.data || [];
     } catch (error) {
       console.error("Error fetching building locations:", error);
@@ -500,7 +369,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       params.append('is_published', 'true');
       if (floorId) params.append('floor_id', floorId);
   
-      console.log('Fetching published locations with params:', params.toString());
   
       const response = await fetch(`/api/location?${params.toString()}`, {
         method: "GET",
@@ -508,7 +376,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       });
   
       const responseText = await response.text();
-      console.log('Get published locations API Response:', responseText);
   
       if (!response.ok) {
         let errorData;
@@ -522,7 +389,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       }
   
       const data = JSON.parse(responseText);
-      console.log(`Loaded ${data.data?.length || 0} published locations`);
       return data.data || [];
     } catch (error) {
       console.error("Error fetching published locations:", error);
@@ -533,7 +399,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
   // Get single location by ID
   export const getLocationById = async (locationId: string): Promise<LocationData | null> => {
     try {
-      console.log('Fetching location by ID:', locationId);
       
       const response = await fetch(`/api/location/${locationId}`, {
         method: "GET",
@@ -541,7 +406,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       });
   
       const responseText = await response.text();
-      console.log('Get location by ID API Response:', responseText);
   
       if (!response.ok) {
         let errorData;
@@ -555,7 +419,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
       }
   
       const data = JSON.parse(responseText);
-      console.log('Loaded location:', data.data);
       return data.data || null;
     } catch (error) {
       console.error("Error fetching location:", error);
@@ -569,7 +432,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
     updates: UpdateLocationRequest
   ): Promise<boolean> => {
     try {
-      console.log('Bulk updating locations:', locationIds, 'with data:', updates);
       
       const updatePromises = locationIds.map(id => updateLocation(id, updates));
       const results = await Promise.all(updatePromises);
@@ -594,7 +456,6 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
   // Bulk delete locations
   export const bulkDeleteLocations = async (locationIds: string[]): Promise<boolean> => {
     try {
-      console.log('Bulk deleting locations:', locationIds);
       
       const deletePromises = locationIds.map(id => deleteLocation(id));
       const results = await Promise.all(deletePromises);
@@ -632,7 +493,6 @@ export const searchLocations = async (
       if (floorId) params.append('floor_id', floorId);
       if (category) params.append('category', category);
   
-      console.log('Searching locations with params:', params.toString());
   
       const response = await fetch(`/api/location?${params.toString()}`, {
         method: "GET",
@@ -640,7 +500,6 @@ export const searchLocations = async (
       });
   
       const responseText = await response.text();
-      console.log('Search locations API Response:', responseText);
   
       if (!response.ok) {
         let errorData;
@@ -654,7 +513,6 @@ export const searchLocations = async (
       }
   
       const data = JSON.parse(responseText);
-      console.log(`Found ${data.data?.length || 0} locations matching search`);
       return data.data || [];
     } catch (error) {
       console.error("Error searching locations:", error);
@@ -668,7 +526,6 @@ export const searchLocations = async (
     isPublished: boolean
   ): Promise<LocationData | null> => {
     try {
-      console.log(`Toggling location ${locationId} published status to:`, isPublished);
       
       return await updateLocation(locationId, { is_published: isPublished });
     } catch (error) {
@@ -857,49 +714,3 @@ export const searchLocations = async (
       return null;
     }
   };
-  
-//   // Export all location management functions
-//   export {
-//     // Main CRUD operations
-//     createLocation,
-//     updateLocation,
-//     deleteLocation,
-//     getLocationById,
-    
-//     // Query operations
-//     getLocationsByFloorId,
-//     getLocationsByBuildingId,
-//     getPublishedLocations,
-//     searchLocations,
-    
-//     // Bulk operations
-//     bulkUpdateLocations,
-//     bulkDeleteLocations,
-    
-//     // Utility functions
-//     toggleLocationPublished,
-//     transformLocationData,
-//     transformLocationToCreateRequest,
-//     transformLocationToUpdateRequest,
-//     validateLocationData,
-//     getLocationStats,
-//   };
-  
-  // Default export for convenience
-//   export default {
-//     create: createLocation,
-//     update: updateLocation,
-//     delete: deleteLocation,
-//     getById: getLocationById,
-//     getByFloorId: getLocationsByFloorId,
-//     getByBuildingId: getLocationsByBuildingId,
-//     getPublished: getPublishedLocations,
-//     search: searchLocations,
-//     bulkUpdate: bulkUpdateLocations,
-//     bulkDelete: bulkDeleteLocations,
-//     togglePublished: toggleLocationPublished,
-//     validate: validateLocationData,
-//     getStats: getLocationStats,
-//     transform: transformLocationData,
-//   };
-  
