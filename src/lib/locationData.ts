@@ -23,7 +23,7 @@ export interface LocationData {
 
 export interface CreateLocationRequest {
   name: string;
-  category: string; // This should match the backend enum values
+  category: string;
   floor_id: string;
   shape: 'circle' | 'rectangle';
   x: number;
@@ -31,7 +31,7 @@ export interface CreateLocationRequest {
   width?: number;
   height?: number;
   radius?: number;
-  logoUrl?: string; // Note: frontend uses logoUrl, backend expects logo_url
+  logoUrl?: string;
   color?: string;
   text_color?: string;
   is_published?: boolean;
@@ -55,79 +55,52 @@ export interface UpdateLocationRequest {
   description?: string;
 }
 
+
+// Add these interfaces for bulk update
+export interface BulkLocationUpdateData {
+  location_id: string;
+  name?: string;
+  category?: string;
+  shape?: 'circle' | 'rectangle';
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  radius?: number;
+  logoUrl?: string;
+  color?: string;
+  text_color?: string;
+  is_published?: boolean;
+  description?: string;
+}
+
+export interface BulkLocationUpdateRequest {
+  locations: BulkLocationUpdateData[];
+  updated_by?: string;
+}
+
+export interface LocationUpdateResult {
+  location_id: string;
+  status: string;
+  message: string;
+  updated_fields?: string[];
+}
+
+export interface BulkUpdateResponse {
+  total_requested: number;
+  successful_updates: number;
+  failed_updates: number;
+  results: LocationUpdateResult[];
+}
+
+
 // Create a new location
-// export const createLocation = async (locationData: CreateLocationRequest): Promise<LocationData | null> => {
-//   try {
-//     // Validate required fields
-//     if (!locationData.name || !locationData.category || !locationData.floor_id) {
-//       toast.error("Missing required fields: name, category, or floor_id");
-//       return null;
-//     }
-
-//     // Validate shape-specific requirements
-//     if (locationData.shape === 'circle' && !locationData.radius) {
-//       toast.error("Radius is required for circle shape");
-//       return null;
-//     }
-
-//     if (locationData.shape === 'rectangle' && (!locationData.width || !locationData.height)) {
-//       toast.error("Width and height are required for rectangle shape");
-//       return null;
-//     }
-    
-//     const response = await fetch("/api/location/createLocation", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(locationData),
-//       credentials: "include",
-//     });
-
-//     const responseText = await response.text();
-
-//     if (!response.ok) {
-//       let errorData;
-//       try {
-//         errorData = JSON.parse(responseText);
-//         console.error('API Error Details:', errorData);
-        
-//         if (errorData.details && Array.isArray(errorData.details)) {
-//           const errorMessages = errorData.details.map((err: any) => 
-//             `${err.loc?.join('.')} - ${err.msg}`
-//           ).join(', ');
-//           toast.error(`Validation Error: ${errorMessages}`);
-//         } else {
-//           toast.error(errorData.error || "Failed to create location");
-//         }
-//       } catch (e) {
-//         toast.error(`Server Error: ${responseText}`);
-//       }
-//       return null;
-//     }
-
-//     const data = JSON.parse(responseText);
-//     toast.success("Location created successfully");
-//     return data.data;
-//   } catch (error) {
-//     console.error("Error creating location:", error);
-//     toast.error("Failed to create location");
-//     return null;
-//   }
-// };  
-
 export const createLocation = async (locationData: CreateLocationRequest): Promise<LocationData | null> => {
   try {
     // Validate required fields
     if (!locationData.name || !locationData.category || !locationData.floor_id) {
+      console.log("Missing required fields:", locationData);
       toast.error("Missing required fields: name, category, or floor_id");
-      return null;
-    }
-
-    // Validate category against allowed values
-    const allowedCategories = ['room', 'facility', 'office', 'meeting', 'dining', 'study', 'entrance'];
-    if (!allowedCategories.includes(locationData.category)) {
-      toast.error("Invalid category selected");
       return null;
     }
 
@@ -147,31 +120,41 @@ export const createLocation = async (locationData: CreateLocationRequest): Promi
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        ...locationData,
-        // Map frontend field names to backend field names
-        logo_url: locationData.logoUrl, // Convert logoUrl to logo_url
-        logoUrl: undefined, // Remove the frontend field
-      }),
+      body: JSON.stringify(locationData),
+      credentials: "include",
     });
 
+    const responseText = await response.text();
+
     if (!response.ok) {
-      const errorData = await response.json();
-      toast.error(errorData.detail || "Failed to create location");
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+        console.error('API Error Details:', errorData);
+        
+        if (errorData.details && Array.isArray(errorData.details)) {
+          const errorMessages = errorData.details.map((err: any) => 
+            `${err.loc?.join('.')} - ${err.msg}`
+          ).join(', ');
+          toast.error(`Validation Error: ${errorMessages}`);
+        } else {
+          toast.error(errorData.error || "Failed to create location");
+        }
+      } catch (e) {
+        toast.error(`Server Error: ${responseText}`);
+      }
       return null;
     }
 
-    const result = await response.json();
+    const data = JSON.parse(responseText);
     toast.success("Location created successfully");
-    return result.data;
+    return data.data;
   } catch (error) {
     console.error("Error creating location:", error);
     toast.error("Failed to create location");
     return null;
   }
-};
-
-
+};  
 
 export const updateLocation = async (
   locationId: string, 
@@ -426,32 +409,46 @@ export const getLocationsByFloorId = async (floorId: string): Promise<LocationDa
     }
   };
   
-  // Bulk update locations
-  export const bulkUpdateLocations = async (
-    locationIds: string[],
-    updates: UpdateLocationRequest
-  ): Promise<boolean> => {
-    try {
-      
-      const updatePromises = locationIds.map(id => updateLocation(id, updates));
-      const results = await Promise.all(updatePromises);
-      
-      const successCount = results.filter(result => result !== null).length;
-      const failCount = results.length - successCount;
-      
-      if (failCount > 0) {
-        toast.error(`Updated ${successCount} locations, ${failCount} failed`);
-        return false;
-      } else {
-        toast.success(`Successfully updated ${successCount} locations`);
-        return true;
-      }
-    } catch (error) {
-      console.error("Error in bulk update:", error);
-      toast.error("Failed to bulk update locations");
-      return false;
+export const bulkUpdateLocations = async (
+  updateData: BulkLocationUpdateRequest
+): Promise<BulkUpdateResponse | null> => {
+  try {
+    const response = await fetch("/api/location/bulkUpdate", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updateData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      toast.error(errorData.detail || "Failed to bulk update locations");
+      return null;
     }
-  };
+
+    const result = await response.json();
+    
+    if (result.data.successful_updates > 0) {
+      toast.success(
+        `Successfully updated ${result.data.successful_updates} location(s)`
+      );
+    }
+    
+    if (result.data.failed_updates > 0) {
+      toast.error(
+        `Failed to update ${result.data.failed_updates} location(s)`
+      );
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error("Error in bulk update:", error);
+    toast.error("Failed to update locations");
+    return null;
+  }
+};
+
   
   // Bulk delete locations
   export const bulkDeleteLocations = async (locationIds: string[]): Promise<boolean> => {

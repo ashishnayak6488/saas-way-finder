@@ -16,7 +16,11 @@ export default function Dashboard() {
     useState<boolean>(false);
 
   const { user, logout } = useAuth();
+
+  console.log("User in Dashboard:", user);
   const userRole: string | undefined = user?.role_id;
+  console.log("User Role in Dashboard:", userRole);
+
 
   // Load saved active component from localStorage
   useEffect(() => {

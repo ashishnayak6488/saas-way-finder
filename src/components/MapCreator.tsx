@@ -15,7 +15,7 @@ import {
   ArrowLeft,
   X,
 } from "lucide-react";
-import { saveMapToStorage, SavedMap } from "@/lib/data";
+// import { saveMapToStorage, SavedMap } from "@/lib/data";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import {
@@ -59,7 +59,22 @@ import {
   updateLocation,
   deleteLocation,
   LocationData,
+  bulkUpdateLocations,
+  BulkLocationUpdateData 
 } from "@/lib/locationData";
+
+import {
+  createPath,
+  getPathsByFloorId,
+  updatePath,
+  deletePath,
+  togglePathPublishStatus,
+  convertPathDataToFrontend,
+  convertPathToBackend,
+  PathData,
+  CreatePathRequest,
+  UpdatePathRequest,
+} from "@/lib/pathData";
 
 // Import the new backend API functions
 import {
@@ -74,10 +89,17 @@ import {
   VerticalConnectorData,
 } from "@/lib/verticalConnectorData";
 
+// import { bulkUpdateLocations, BulkLocationUpdateData } from "@/lib/locationData";
+
 import toast from "react-hot-toast";
 
 interface MapCreatorProps {
-  selectedMap?: SavedMap | null;
+  selectedMap?: any | null;
+  selectedRoute?: {
+    path: Path;
+    building: Building;
+    floor: Floor;
+  } | null;
   onClose: () => void;
 }
 
@@ -114,7 +136,11 @@ const MAP_CONTAINER_CONFIG = {
   minHeight: 450,
 };
 
-const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
+const MapCreator: React.FC<MapCreatorProps> = ({ 
+  selectedMap, 
+  selectedRoute,
+  onClose 
+}) => {
   // Core state
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [mapName, setMapName] = useState<string>("");
@@ -198,6 +224,12 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
   // Building management
   const [isBuildingMode, setIsBuildingMode] = useState(false);
 
+
+
+const [isBulkEditMode, setIsBulkEditMode] = useState(false);
+const [selectedTagsForBulkEdit, setSelectedTagsForBulkEdit] = useState<Set<string>>(new Set());
+const [pendingBulkUpdates, setPendingBulkUpdates] = useState<Map<string, Partial<TaggedLocation>>>(new Map());
+
   // Load buildings on component mount
   // Load buildings on component mount
   useEffect(() => {
@@ -255,23 +287,110 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
   }, [selectedFloor]);
 
   // Initialize with selected map data if editingl
-  useEffect(() => {
-    if (selectedMap) {
-      setMapName(selectedMap.name);
-      setCurrentMapId(selectedMap.id);
-      setIsPublished(selectedMap.isPublished || false);
+  // useEffect(() => {
+  //   if (selectedMap) {
+  //     setMapName(selectedMap.name);
+  //     setCurrentMapId(selectedMap.id);
+  //     setIsPublished(selectedMap.isPublished || false);
 
-      // Convert saved map paths to current format
-      const convertedPaths: Path[] = selectedMap.paths.map((path) => ({
-        ...path,
-        isPublished: path.isPublished || false,
-      }));
-      setPaths(convertedPaths);
+  //     // Convert saved map paths to current format
+  //     const convertedPaths: Path[] = selectedMap.paths.map((path) => ({
+  //       ...path,
+  //       isPublished: path.isPublished || false,
+  //     }));
+  //     setPaths(convertedPaths);
+  //   } else {
+  //     // Generate new map ID for new maps
+  //     setCurrentMapId(Date.now().toString());
+  //   }
+  // }, [selectedMap]);
+
+
+  // useEffect(() => {
+  //   const loadPathsForFloor = async () => {
+  //     if (selectedFloor?.floor_id) {
+  //       try {
+  //         const pathsData = await getPathsByFloorId(selectedFloor.floor_id);
+  //         const convertedPaths = pathsData.map(convertPathDataToFrontend);
+  //         setPaths(convertedPaths);
+  //       } catch (error) {
+  //         console.error("Error loading paths for floor:", error);
+  //         setPaths([]);
+  //       }
+  //     } else {
+  //       setPaths([]);
+  //     }
+  //   };
+  
+  //   loadPathsForFloor();
+  // }, [selectedFloor]);
+
+
+  // Update the useEffect for loading paths when floor changes
+useEffect(() => {
+  const loadPathsForFloor = async () => {
+    if (selectedFloor?.floor_id) {
+      try {
+        // Load all paths (both published and unpublished) for editing
+        const pathsData = await getPathsByFloorId(
+          selectedFloor.floor_id, 
+          undefined, // Don't filter by published status
+          'active'   // Only get active paths
+        );
+        const convertedPaths = pathsData.map(convertPathDataToFrontend);
+        setPaths(convertedPaths);
+      } catch (error) {
+        console.error("Error loading paths for floor:", error);
+        setPaths([]);
+        toast.error("Failed to load paths for this floor");
+      }
     } else {
-      // Generate new map ID for new maps
-      setCurrentMapId(Date.now().toString());
+      setPaths([]);
     }
-  }, [selectedMap]);
+  };
+
+  loadPathsForFloor();
+}, [selectedFloor]);
+
+
+useEffect(() => {
+  if (selectedRoute) {
+    // Set building and floor from selectedRoute
+    setSelectedBuildingId(selectedRoute.building.building_id);
+    setSelectedBuilding(selectedRoute.building);
+    setSelectedFloorId(selectedRoute.floor.floor_id);
+    setSelectedFloor(selectedRoute.floor);
+    setMapImage(selectedRoute.floor.imageUrl);
+    
+    // Set the path for editing
+    const pathToEdit: Path = {
+      id: selectedRoute.path.id,
+      name: selectedRoute.path.name,
+      source: selectedRoute.path.source,
+      destination: selectedRoute.path.destination,
+      points: selectedRoute.path.points,
+      isPublished: selectedRoute.path.isPublished,
+      sourceTagId: selectedRoute.path.sourceTagId,
+      destinationTagId: selectedRoute.path.destinationTagId,
+      floorId: selectedRoute.path.floorId,
+      color: selectedRoute.path.color,
+      isMultiFloor: selectedRoute.path.isMultiFloor,
+      segments: selectedRoute.path.segments,
+      sourceFloorId: selectedRoute.path.sourceFloorId,
+      destinationFloorId: selectedRoute.path.destinationFloorId,
+    };
+    
+    setSelectedPath(pathToEdit);
+    setCurrentPath([...selectedRoute.path.points]);
+    setIsEditMode(true);
+    setIsDesignMode(false);
+    
+    // Set map name if not set
+    if (!mapName) {
+      setMapName(`${selectedRoute.building.name} - ${selectedRoute.floor.label}`);
+    }
+  }
+}, [selectedRoute]);
 
   // Handle building selection
   useEffect(() => {
@@ -448,67 +567,23 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
     }
   };
 
-  // const handleConnectorClick = (connector: VerticalConnector) => {
-  //   if (!selectedFloor || !selectedBuilding) return;
 
-  //   const matchingConnectors = verticalConnectors.filter(
-  //     (c) => c.sharedId === connector.sharedId && c.floorId !== selectedFloor.floor_id
-  //   );
+  const handleBulkUpdateTags = async (updatedTags: TaggedLocation[]) => {
+    // Update the local tags state with the bulk updated tags
+    setTags(updatedTags);
+    
+    // Optionally reload tags from API to ensure consistency
+    if (selectedFloor?.floor_id) {
+      try {
+        const locations = await getLocationsByFloorId(selectedFloor.floor_id);
+        const convertedTags = locations.map(convertLocationDataToTaggedLocation);
+        setTags(convertedTags);
+      } catch (error) {
+        console.error("Error reloading locations after bulk update:", error);
+      }
+    }
+  };
 
-  //   if (matchingConnectors.length === 0) {
-  //     setIsConnectorPromptActive(false);
-  //     alert(
-  //       `No matching connector "${connector.name}" found on other floors. Please ensure the connector exists on multiple floors with the same Shared ID.`
-  //     );
-  //     return;
-  //   }
-
-  //   const availableFloors = selectedBuilding.floors.filter((floor) =>
-  //     matchingConnectors.some((c) => c.floorId === floor.floor_id)
-  //   );
-
-  //   if (availableFloors.length === 0) {
-  //     setIsConnectorPromptActive(false);
-  //     alert("No other floors available for this connector.");
-  //     return;
-  //   }
-
-  //   const shouldSwitch = confirm(
-  //     `You've reached "${connector.name}". Do you want to continue this path on another floor?\n\nClick OK to switch floors, or Cancel to continue on the current floor.`
-  //   );
-
-  //   if (!shouldSwitch) {
-  //     setIsConnectorPromptActive(false);
-  //     setLastConnectorInteraction(connector.id);
-  //     return;
-  //   }
-
-  //   let selectedFloorLabel: string | null = null;
-
-  //   if (availableFloors.length === 1) {
-  //     selectedFloorLabel = availableFloors[0].label;
-  //   } else {
-  //     const floorOptions = availableFloors.map((f) => f.label).join("\n");
-  //     selectedFloorLabel = prompt(
-  //       `Connect to which floor via "${connector.name}"?\n\nAvailable floors:\n${floorOptions}\n\nEnter the floor name:`
-  //     );
-  //   }
-
-  //   if (selectedFloorLabel) {
-  //     const targetFloor = availableFloors.find(
-  //       (f) => f.label.toLowerCase() === selectedFloorLabel.toLowerCase()
-  //     );
-
-  //     if (targetFloor) {
-  //       handleFloorTransition(targetFloor, connector);
-  //     } else {
-  //       setIsConnectorPromptActive(false);
-  //       alert(`Floor "${selectedFloorLabel}" not found. Please try again.`);
-  //     }
-  //   } else {
-  //     setIsConnectorPromptActive(false);
-  //   }
-  // };
 
   const handleConnectorClick = async (connector: VerticalConnector) => {
     if (!selectedFloor || !selectedBuilding) return;
@@ -812,33 +887,103 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
   // };
 
   // Update the handleCreateTag function
+  // const handleCreateTag = async (
+  //   name: string,
+  //   category: string,
+  //   floorId?: string
+  // ) => {
+
+    
+  //   if (pendingShape && selectedFloor) {
+  //     console.log("Creating tag with name:", name);
+  //     console.log("Category:", category);
+  //     console.log("Pending Shape:", pendingShape);
+  //     console.log("Selected Floor:", selectedFloor);
+  //     console.log("Floor ID:", floorId);
+
+  //     const locationData = convertTaggedLocationToLocationData({
+  //       id: "", // Will be generated by API
+  //       name,
+  //       category,
+  //       floorId: floorId || selectedFloor?.floor_id,
+  //       ...pendingShape,
+  //     });
+
+  //     console.log("Location Data:", locationData);
+
+  //     const createdLocation = await createLocation(locationData);
+
+  //     if (createdLocation) {
+  //       const newTag = convertLocationDataToTaggedLocation(createdLocation);
+  //       setTags([...tags, newTag]);
+  //       setPendingShape(null);
+  //     }
+  //   }
+  // };
+
+
   const handleCreateTag = async (
     name: string,
     category: string,
     floorId?: string
   ) => {
-    if (pendingShape && selectedFloor) {
-      const locationData = convertTaggedLocationToLocationData({
-        id: "", // Will be generated by API
-        name,
-        category,
-        floorId: floorId || selectedFloor.floor_id,
-        ...pendingShape,
-      });
-
+    if (!pendingShape) {
+      toast.error("No shape data available");
+      return;
+    }
+  
+    if (!selectedFloor?.floor_id) {
+      toast.error("No floor selected");
+      return;
+    }
+  
+    const targetFloorId = floorId || selectedFloor.floor_id;
+  
+    if (!targetFloorId) {
+      toast.error("Floor ID is required");
+      return;
+    }
+  
+    const locationData: CreateLocationRequest = {
+      name,
+      category,
+      floor_id: targetFloorId, // Directly assign the floor_id
+      shape: pendingShape.shape,
+      x: pendingShape.x,
+      y: pendingShape.y,
+      width: pendingShape.width,
+      height: pendingShape.height,
+      radius: pendingShape.radius,
+      logoUrl: pendingShape.logoUrl,
+      color: pendingShape.color || "#3b82f6",
+      text_color: pendingShape.textColor || "#000000",
+      is_published: pendingShape.isPublished ?? true,
+      description: pendingShape.description,
+    };
+  
+    // console.log("Location Data to be sent:", locationData);
+  
+    try {
       const createdLocation = await createLocation(locationData);
-
+  
       if (createdLocation) {
         const newTag = convertLocationDataToTaggedLocation(createdLocation);
         setTags([...tags, newTag]);
         setPendingShape(null);
+        toast.success("Location created successfully");
       }
+    } catch (error) {
+      console.error("Error creating location:", error);
+      toast.error("Failed to create location");
     }
   };
+  
 
   const handleTagUpdate = (updatedTag: TaggedLocation) => {
     setTags(tags.map((tag) => (tag.id === updatedTag.id ? updatedTag : tag)));
   };
+
+
 
   const handleEditTag = async (updatedTag: TaggedLocation) => {
     try {
@@ -913,51 +1058,157 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
     }
   };
 
-  const handleSavePath = (source: string, destination: string) => {
-    if (currentPath.length === 0 && multiFloorPathSegments.length === 0) return;
+  // const handleSavePath = (source: string, destination: string) => {
+  //   if (currentPath.length === 0 && multiFloorPathSegments.length === 0) return;
 
-    // Find matching tags for source and destination
-    const sourceTag = tags.find(
-      (tag) => tag.name.toLowerCase() === source.toLowerCase()
-    );
-    const destinationTag = tags.find(
-      (tag) => tag.name.toLowerCase() === destination.toLowerCase()
-    );
+  //   // Find matching tags for source and destination
+  //   const sourceTag = tags.find(
+  //     (tag) => tag.name.toLowerCase() === source.toLowerCase()
+  //   );
+  //   const destinationTag = tags.find(
+  //     (tag) => tag.name.toLowerCase() === destination.toLowerCase()
+  //   );
 
-    const pathId = selectedPath?.id || Date.now().toString();
+  //   const pathId = selectedPath?.id || Date.now().toString();
 
-    // Handle multi-floor path
+  //   // Handle multi-floor path
+  //   if (isCreatingMultiFloorPath && multiFloorPathSegments.length > 0) {
+  //     // Add final segment
+  //     const finalSegment: PathSegment = {
+  //       id: Date.now().toString(),
+  //       floorId: selectedFloor?.floor_id || "",
+  //       points: [...currentPath],
+  //     };
+
+  //     const allSegments = [...multiFloorPathSegments, finalSegment];
+
+  //     const newPath: Path = {
+  //       id: pathId,
+  //       name: `${source} to ${destination}`,
+  //       source,
+  //       destination,
+  //       points: [], // Empty for multi-floor paths
+  //       isPublished: selectedPath?.isPublished || false,
+  //       sourceTagId: sourceTag?.id,
+  //       destinationTagId: destinationTag?.id,
+  //       floorId: selectedFloor?.floor_id,
+  //       color: selectedPath?.color,
+  //       isMultiFloor: true,
+  //       segments: allSegments,
+  //       sourceFloorId: allSegments[0]?.floorId,
+  //       destinationFloorId: allSegments[allSegments.length - 1]?.floorId,
+  //     };
+
+  //     if (selectedPath) {
+  //       setPaths(paths.map((p) => (p.id === pathId ? newPath : p)));
+  //     } else {
+  //       setPaths([...paths, newPath]);
+  //     }
+
+  //     // Reset multi-floor state
+  //     setIsCreatingMultiFloorPath(false);
+  //     setMultiFloorPathSegments([]);
+  //     setCurrentSegmentFloorId(null);
+  //     setMultiFloorPathSource("");
+  //     setMultiFloorPathDestination("");
+  //   } else {
+  //     // Handle single-floor path
+  //     const newPath: Path = {
+  //       id: pathId,
+  //       name: `${source} to ${destination}`,
+  //       source,
+  //       destination,
+  //       points: [...currentPath],
+  //       isPublished: selectedPath?.isPublished || false,
+  //       sourceTagId: sourceTag?.id,
+  //       destinationTagId: destinationTag?.id,
+  //       floorId: selectedFloor?.floor_id,
+  //       color: selectedPath?.color,
+  //     };
+
+  //     if (selectedPath) {
+  //       const updatedPath = {
+  //         ...newPath,
+  //         source: source || selectedPath.source,
+  //         destination: destination || selectedPath.destination,
+  //         name:
+  //           source && destination
+  //             ? `${source} to ${destination}`
+  //             : selectedPath.name,
+  //       };
+
+  //       setPaths(paths.map((p) => (p.id === pathId ? updatedPath : p)));
+  //     } else {
+  //       setPaths([...paths, newPath]);
+  //     }
+  //   }
+
+  //   setCurrentPath([]);
+  //   setUndoStack([]);
+  //   setIsDesignMode(false);
+  //   setIsEditMode(false);
+  //   setSelectedPath(null);
+  // };
+
+
+
+  // Update the handleSavePath function
+
+
+
+const handleSavePath = async (source: string, destination: string) => {
+  if (currentPath.length === 0 && multiFloorPathSegments.length === 0) return;
+
+  if (!selectedFloor?.floor_id) {
+    toast.error("No floor selected");
+    return;
+  }
+
+  // Find matching tags for source and destination
+  const sourceTag = tags.find(
+    (tag) => tag.name.toLowerCase() === source.toLowerCase()
+  );
+  const destinationTag = tags.find(
+    (tag) => tag.name.toLowerCase() === destination.toLowerCase()
+  );
+
+  try {
+    // Handle multi-floor path (for now, we'll save each segment separately)
     if (isCreatingMultiFloorPath && multiFloorPathSegments.length > 0) {
       // Add final segment
       const finalSegment: PathSegment = {
         id: Date.now().toString(),
-        floorId: selectedFloor?.floor_id || "",
+        floorId: selectedFloor.floor_id,
         points: [...currentPath],
       };
 
       const allSegments = [...multiFloorPathSegments, finalSegment];
 
-      const newPath: Path = {
-        id: pathId,
-        name: `${source} to ${destination}`,
-        source,
-        destination,
-        points: [], // Empty for multi-floor paths
-        isPublished: selectedPath?.isPublished || false,
-        sourceTagId: sourceTag?.id,
-        destinationTagId: destinationTag?.id,
-        floorId: selectedFloor?.floor_id,
-        color: selectedPath?.color,
-        isMultiFloor: true,
-        segments: allSegments,
-        sourceFloorId: allSegments[0]?.floorId,
-        destinationFloorId: allSegments[allSegments.length - 1]?.floorId,
-      };
+      // For now, save each segment as a separate path
+      // TODO: Implement multi-floor path support in backend
+      for (let i = 0; i < allSegments.length; i++) {
+        const segment = allSegments[i];
+        const segmentName = `${source} to ${destination} (Segment ${i + 1})`;
+        
+        const pathData: CreatePathRequest = {
+          name: segmentName,
+          floor_id: segment.floorId,
+          source: i === 0 ? source : "Connector",
+          destination: i === allSegments.length - 1 ? destination : "Connector",
+          source_tag_id: i === 0 ? sourceTag?.id : undefined,
+          destination_tag_id: i === allSegments.length - 1 ? destinationTag?.id : undefined,
+          points: segment.points,
+          shape: "circle",
+          color: selectedPath?.color || "#3b82f6",
+          is_published: selectedPath?.isPublished || false,
+          created_by: "user", // TODO: Get from auth context
+        };
 
-      if (selectedPath) {
-        setPaths(paths.map((p) => (p.id === pathId ? newPath : p)));
-      } else {
-        setPaths([...paths, newPath]);
+        const createdPath = await createPath(pathData);
+        if (!createdPath) {
+          toast.error(`Failed to create segment ${i + 1}`);
+          return;
+        }
       }
 
       // Reset multi-floor state
@@ -966,35 +1217,54 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
       setCurrentSegmentFloorId(null);
       setMultiFloorPathSource("");
       setMultiFloorPathDestination("");
+      
+      // Reload paths
+      const pathsData = await getPathsByFloorId(selectedFloor.floor_id);
+      const convertedPaths = pathsData.map(convertPathDataToFrontend);
+      setPaths(convertedPaths);
     } else {
       // Handle single-floor path
-      const newPath: Path = {
-        id: pathId,
-        name: `${source} to ${destination}`,
-        source,
-        destination,
-        points: [...currentPath],
-        isPublished: selectedPath?.isPublished || false,
-        sourceTagId: sourceTag?.id,
-        destinationTagId: destinationTag?.id,
-        floorId: selectedFloor?.floor_id,
-        color: selectedPath?.color,
-      };
-
       if (selectedPath) {
-        const updatedPath = {
-          ...newPath,
-          source: source || selectedPath.source,
-          destination: destination || selectedPath.destination,
-          name:
-            source && destination
-              ? `${source} to ${destination}`
-              : selectedPath.name,
+        // Update existing path
+        const updateData: UpdatePathRequest = {
+          name: `${source} to ${destination}`,
+          source: source,
+          destination: destination,
+          source_tag_id: sourceTag?.id,
+          destination_tag_id: destinationTag?.id,
+          points: currentPath,
+          color: selectedPath.color,
+          is_published: selectedPath.isPublished,
+          updated_by: "user", // TODO: Get from auth context
         };
 
-        setPaths(paths.map((p) => (p.id === pathId ? updatedPath : p)));
+        const updatedPath = await updatePath(selectedPath.id, updateData);
+        if (updatedPath) {
+          // Update local state
+          const convertedPath = convertPathDataToFrontend(updatedPath);
+          setPaths(paths.map((p) => (p.id === selectedPath.id ? convertedPath : p)));
+        }
       } else {
-        setPaths([...paths, newPath]);
+        // Create new path
+        const pathData: CreatePathRequest = {
+          name: `${source} to ${destination}`,
+          floor_id: selectedFloor.floor_id,
+          source: source,
+          destination: destination,
+          source_tag_id: sourceTag?.id,
+          destination_tag_id: destinationTag?.id,
+          points: currentPath,
+          shape: "circle",
+          color: "#3b82f6",
+          is_published: false,
+          created_by: "user", // TODO: Get from auth context
+        };
+
+        const createdPath = await createPath(pathData);
+        if (createdPath) {
+          const convertedPath = convertPathDataToFrontend(createdPath);
+          setPaths([...paths, convertedPath]);
+        }
       }
     }
 
@@ -1003,8 +1273,11 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
     setIsDesignMode(false);
     setIsEditMode(false);
     setSelectedPath(null);
-  };
-
+  } catch (error) {
+    console.error("Error saving path:", error);
+    toast.error("Failed to save path");
+  }
+};
   const handleClearPath = () => {
     setCurrentPath([]);
     setUndoStack([]);
@@ -1064,68 +1337,129 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
     setUndoStack([]);
   };
 
-  const handleDeletePath = (pathId: string) => {
-    setPaths(paths.filter((p) => p.id !== pathId));
-  };
+  // const handleDeletePath = (pathId: string) => {
+  //   setPaths(paths.filter((p) => p.id !== pathId));
+  // };
 
-  const handlePublishMap = () => {
-    // For building mode, check if we have a building and floors
-    if (selectedBuilding) {
-      if (selectedBuilding.floors.length === 0) {
-        alert(
-          "Please add at least one floor to the building before publishing"
-        );
-        return;
-      }
-
-      if (paths.length === 0) {
-        alert("Please create at least one path before publishing");
-        return;
-      }
-
-      // Create a saved map for the building
-      const savedMap: SavedMap = {
-        id: selectedBuilding.building_id,
-        name: selectedBuilding.name,
-        imageUrl: selectedBuilding.floors[0]?.imageUrl || "",
-        paths: paths.map((path) => ({
-          id: path.id,
-          name: path.name,
-          source: path.source,
-          destination: path.destination,
-          points: path.points,
-          isPublished: true,
-          color: path.color,
-        })),
-        createdAt: new Date().toISOString(),
-        isPublished: true,
-      };
-
-      saveMapToStorage(savedMap);
-
-      // Update all paths to published status
-      setPaths(paths.map((path) => ({ ...path, isPublished: true })));
-
-      // Only set isPublished to true if ALL paths are now published
-      const allPathsPublished = paths.every((path) => path.isPublished);
-      if (allPathsPublished) {
-        setIsPublished(true);
-      }
-
-      alert(
-        `Building "${selectedBuilding.name}" has been published successfully!`
-      );
-      return;
+  // Update the handleDeletePath function
+const handleDeletePath = async (pathId: string) => {
+  try {
+    const success = await deletePath(pathId);
+    if (success) {
+      setPaths(paths.filter((p) => p.id !== pathId));
     }
+  } catch (error) {
+    console.error("Error deleting path:", error);
+    toast.error("Failed to delete path");
+  }
+};
 
-    // For single map mode
-    if (!mapImage || !currentMapId) {
-      alert("Please select a building and floor first");
-      return;
-    }
+  // const handlePublishMap = () => {
+  //   // For building mode, check if we have a building and floors
+  //   if (selectedBuilding) {
+  //     if (selectedBuilding.floors.length === 0) {
+  //       alert(
+  //         "Please add at least one floor to the building before publishing"
+  //       );
+  //       return;
+  //     }
 
-    if (!mapName.trim()) {
-      alert("Please provide a map name before publishing");
+  //     if (paths.length === 0) {
+  //       alert("Please create at least one path before publishing");
+  //       return;
+  //     }
+
+  //     // Create a saved map for the building
+  //     const savedMap: SavedMap = {
+  //       id: selectedBuilding.building_id,
+  //       name: selectedBuilding.name,
+  //       imageUrl: selectedBuilding.floors[0]?.imageUrl || "",
+  //       paths: paths.map((path) => ({
+  //         id: path.id,
+  //         name: path.name,
+  //         source: path.source,
+  //         destination: path.destination,
+  //         points: path.points,
+  //         isPublished: true,
+  //         color: path.color,
+  //       })),
+  //       createdAt: new Date().toISOString(),
+  //       isPublished: true,
+  //     };
+
+  //     saveMapToStorage(savedMap);
+
+  //     // Update all paths to published status
+  //     setPaths(paths.map((path) => ({ ...path, isPublished: true })));
+
+  //     // Only set isPublished to true if ALL paths are now published
+  //     const allPathsPublished = paths.every((path) => path.isPublished);
+  //     if (allPathsPublished) {
+  //       setIsPublished(true);
+  //     }
+
+  //     alert(
+  //       `Building "${selectedBuilding.name}" has been published successfully!`
+  //     );
+  //     return;
+  //   }
+
+  //   // For single map mode
+  //   if (!mapImage || !currentMapId) {
+  //     alert("Please select a building and floor first");
+  //     return;
+  //   }
+
+  //   if (!mapName.trim()) {
+  //     alert("Please provide a map name before publishing");
+  //     return;
+  //   }
+
+  //   if (paths.length === 0) {
+  //     alert("Please create at least one path before publishing");
+  //     return;
+  //   }
+
+  //   const savedMap: SavedMap = {
+  //     id: currentMapId,
+  //     name: mapName.trim(),
+  //     imageUrl: mapImage,
+  //     paths: paths.map((path) => ({
+  //       id: path.id,
+  //       name: path.name,
+  //       source: path.source,
+  //       destination: path.destination,
+  //       points: path.points,
+  //       isPublished: true,
+  //       color: path.color,
+  //     })),
+  //     createdAt: new Date().toISOString(),
+  //     isPublished: true,
+  //   };
+
+  //   saveMapToStorage(savedMap);
+
+  //   // Update all paths to published status
+  //   setPaths(paths.map((path) => ({ ...path, isPublished: true })));
+
+  //   // Only set isPublished to true if ALL paths are now published
+  //   const allPathsPublished = paths.every((path) => path.isPublished);
+  //   if (allPathsPublished) {
+  //     setIsPublished(true);
+  //   }
+
+  //   alert(`Map "${mapName}" has been published successfully!`);
+  // };
+
+
+
+  // Update the handlePublishMap function
+
+  const handlePublishMap = async () => {
+  // For building mode, check if we have a building and floors
+  if (selectedBuilding) {
+    if (selectedBuilding.floors.length === 0) {
+      alert("Please add at least one floor to the building before publishing");
       return;
     }
 
@@ -1134,36 +1468,61 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
       return;
     }
 
-    const savedMap: SavedMap = {
-      id: currentMapId,
-      name: mapName.trim(),
-      imageUrl: mapImage,
-      paths: paths.map((path) => ({
-        id: path.id,
-        name: path.name,
-        source: path.source,
-        destination: path.destination,
-        points: path.points,
-        isPublished: true,
-        color: path.color,
-      })),
-      createdAt: new Date().toISOString(),
-      isPublished: true,
-    };
+    try {
+      // Publish all unpublished paths
+      const unpublishedPaths = paths.filter(path => !path.isPublished);
+      
+      for (const path of unpublishedPaths) {
+        await togglePathPublishStatus(path.id, true);
+      }
 
-    saveMapToStorage(savedMap);
-
-    // Update all paths to published status
-    setPaths(paths.map((path) => ({ ...path, isPublished: true })));
-
-    // Only set isPublished to true if ALL paths are now published
-    const allPathsPublished = paths.every((path) => path.isPublished);
-    if (allPathsPublished) {
+      // Update local state
+      setPaths(paths.map((path) => ({ ...path, isPublished: true })));
       setIsPublished(true);
+
+      alert(`Building "${selectedBuilding.name}" has been published successfully!`);
+    } catch (error) {
+      console.error("Error publishing paths:", error);
+      toast.error("Failed to publish some paths");
+    }
+    return;
+  }
+
+  // For single map mode
+  if (!selectedFloor?.floor_id) {
+    alert("Please select a building and floor first");
+    return;
+  }
+
+  if (!mapName.trim()) {
+    alert("Please provide a map name before publishing");
+    return;
+  }
+
+  if (paths.length === 0) {
+    alert("Please create at least one path before publishing");
+    return;
+  }
+
+  try {
+    // Publish all unpublished paths
+    const unpublishedPaths = paths.filter(path => !path.isPublished);
+    
+    for (const path of unpublishedPaths) {
+      await togglePathPublishStatus(path.id, true);
     }
 
+    // Update local state
+    setPaths(paths.map((path) => ({ ...path, isPublished: true })));
+    setIsPublished(true);
+
     alert(`Map "${mapName}" has been published successfully!`);
-  };
+  } catch (error) {
+    console.error("Error publishing paths:", error);
+    toast.error("Failed to publish some paths");
+  }
+};
+
 
   const toggleDesignMode = () => {
     if (isPreviewMode || isTagMode) return;
@@ -1489,11 +1848,47 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
     setTags(tags.map((tag) => (tag.id === tagId ? { ...tag, color } : tag)));
   };
 
-  const handlePathColorChange = (pathId: string, color: string) => {
-    setPaths(
-      paths.map((path) => (path.id === pathId ? { ...path, color } : path))
-    );
+  // const handlePathColorChange = (pathId: string, color: string) => {
+  //   setPaths(
+  //     paths.map((path) => (path.id === pathId ? { ...path, color } : path))
+  //   );
+  // };
+
+  const handlePathColorChange = async (pathId: string, color: string) => {
+    try {
+      const updatedPath = await updatePath(pathId, { color, updated_by: "user" });
+      if (updatedPath) {
+        const convertedPath = convertPathDataToFrontend(updatedPath);
+        setPaths(paths.map((path) => (path.id === pathId ? convertedPath : path)));
+      }
+    } catch (error) {
+      console.error("Error updating path color:", error);
+      toast.error("Failed to update path color");
+    }
   };
+
+  // Add a function to toggle path publish status
+const handleTogglePathPublish = async (pathId: string, isPublished: boolean) => {
+  try {
+    const updatedPath = await togglePathPublishStatus(pathId, isPublished);
+    if (updatedPath) {
+      const convertedPath = convertPathDataToFrontend(updatedPath);
+      setPaths(paths.map((path) => (path.id === pathId ? convertedPath : path)));
+    }
+  } catch (error) {
+    console.error("Error toggling path publish status:", error);
+    toast.error("Failed to update path status");
+  }
+};
+
+
+// Update the component to check published status from database
+useEffect(() => {
+  // Check if all paths are published
+  const allPathsPublished = paths.length > 0 && paths.every((path) => path.isPublished);
+  setIsPublished(allPathsPublished);
+}, [paths]);
+  
 
   const toggleVerticalTagMode = () => {
     setIsVerticalTagMode(!isVerticalTagMode);
@@ -1776,6 +2171,8 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
                   hasCurrentPath={currentPath.length > 0}
                   availableLocations={getAvailableLocations()}
                   selectedPath={selectedPath}
+                  isBulkEditMode={isBulkEditMode} // Add this
+                  selectedTagsCount={selectedTagsForBulkEdit.size} // Add this
                 />
 
                 {/* Map Canvas Container */}
@@ -1856,6 +2253,9 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
                       )}
                       onTagUpdate={handleTagUpdate}
                       selectedPathForAnimation={selectedPathForAnimation}
+                      selectedTagsForBulkEdit={selectedTagsForBulkEdit} // Add this
+                      isBulkEditMode={isBulkEditMode} // Add this
+                      pendingBulkUpdates={pendingBulkUpdates} // Add this
                     />
                   </div>
                 </div>
@@ -1879,6 +2279,7 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
                     tags={tags}
                     onEditTag={handleEditTag}
                     onDeleteTag={handleDeleteTag}
+                    onBulkUpdateTags={handleBulkUpdateTags} // Add this line
                     currentFloorId={selectedFloor?.floor_id || ""}
                   />
                   {tags.filter(
@@ -1918,6 +2319,7 @@ const MapCreator: React.FC<MapCreatorProps> = ({ selectedMap, onClose }) => {
                     paths={paths}
                     onEditPath={handleEditPath}
                     onDeletePath={handleDeletePath}
+                    onTogglePublish={handleTogglePathPublish} // Add this line
                   />
                   {(tags.filter(
                     (tag) =>

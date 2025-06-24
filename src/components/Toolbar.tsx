@@ -58,6 +58,8 @@ interface ToolbarProps {
   hasCurrentPath: boolean;
   availableLocations: string[];
   selectedPath?: Path | null;
+  isBulkEditMode?: boolean;
+  selectedTagsCount?: number;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -80,7 +82,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   canUndo,
   hasCurrentPath,
   availableLocations,
-  selectedPath
+  selectedPath,
+  isBulkEditMode = false,
+  selectedTagsCount = 0,
+
 }) => {
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
@@ -110,10 +115,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     setShowPublishDialog(false);
   };
 
+  // const getActiveMode = () => {
+  //   if (isPreviewMode) return "Preview Mode";
+  //   if (isVerticalTagMode) return "Vertical Connector Tagging";
+  //   if (isTagMode) return "Location Tagging";
+  //   if (isEditMode) return "Edit Path";
+  //   if (isDesignMode) return "Design Mode";
+  //   return "View Mode";
+  // };
+
   const getActiveMode = () => {
     if (isPreviewMode) return "Preview Mode";
     if (isVerticalTagMode) return "Vertical Connector Tagging";
-    if (isTagMode) return "Location Tagging";
+    if (isTagMode) {
+      if (isBulkEditMode && selectedTagsCount && selectedTagsCount > 0) {
+        return `Bulk Edit Mode (${selectedTagsCount} selected)`;
+      }
+      return "Location Tagging";
+    }
     if (isEditMode) return "Edit Path";
     if (isDesignMode) return "Design Mode";
     return "View Mode";
@@ -122,12 +141,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const getModeColor = () => {
     if (isPreviewMode) return "text-purple-600";
     if (isVerticalTagMode) return "text-indigo-600";
-    if (isTagMode) return "text-orange-600";
+    if (isTagMode) {
+      if (isBulkEditMode) return "text-orange-600";
+      return "text-orange-600";
+    }
     if (isEditMode) return "text-green-600";
     if (isDesignMode) return "text-blue-600";
     return "text-gray-600";
   };
-
   return (
     <>
       <div className="p-4 border-b bg-gray-50">

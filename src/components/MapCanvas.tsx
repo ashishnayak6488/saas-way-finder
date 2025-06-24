@@ -49,6 +49,12 @@ interface MapCanvasProps {
   verticalConnectors: VerticalConnector[];
   onTagUpdate?: (tag: TaggedLocation) => void;
   selectedPathForAnimation?: Path | null; // New prop for specific path animation
+
+  selectedTagsForBulkEdit?: Set<string>; // New prop
+  isBulkEditMode?: boolean; // New prop
+  pendingBulkUpdates?: Map<string, Partial<TaggedLocation>>; // New prop
+
+  // onBulkTagUpdate?: (tag: TaggedLocation) => void; // Add this new prop for bulk 
 }
 
 // Standardized map dimensions
@@ -81,6 +87,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   verticalConnectors,
   onTagUpdate,
   selectedPathForAnimation,
+  selectedTagsForBulkEdit,
+  isBulkEditMode,
+  pendingBulkUpdates,
+  // onBulkTagUpdate,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -201,6 +211,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     };
   };
 
+
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
@@ -303,13 +314,49 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       const animation = tagAnimations.get(tag.id) || 0;
       const pulseScale = 1 + Math.sin(animation * 0.1) * 0.1;
 
+      // Check if tag is selected for bulk edit
+      const isSelectedForBulkEdit =
+        selectedTagsForBulkEdit?.has(tag.id) || false;
+      const hasPendingUpdates = pendingBulkUpdates?.has(tag.id) || false;
+
       ctx.save();
       ctx.translate(canvasPos.x, canvasPos.y);
       ctx.scale(pulseScale, pulseScale);
       ctx.translate(-canvasPos.x, -canvasPos.y);
 
       // Use tag color if available, otherwise default
-      const tagColor = tag.color || "#f59e0b";
+      let tagColor = tag.color || "#f59e0b";
+
+      // Apply pending color updates if any
+      if (hasPendingUpdates) {
+        const pendingUpdates = pendingBulkUpdates?.get(tag.id);
+        if (pendingUpdates?.color) {
+          tagColor = pendingUpdates.color;
+        }
+      }
+
+      // Special styling for bulk selected tags
+      if (isSelectedForBulkEdit) {
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([5, 5]);
+
+        // Draw selection outline
+        if (tag.shape === "circle" && tag.radius) {
+          const canvasRadius = tag.radius * canvasSize.width + 10;
+          ctx.beginPath();
+          ctx.arc(canvasPos.x, canvasPos.y, canvasRadius, 0, 2 * Math.PI);
+          ctx.stroke();
+        } else if (tag.shape === "rectangle" && tag.width && tag.height) {
+          const canvasWidth = tag.width * canvasSize.width + 20;
+          const canvasHeight = tag.height * canvasSize.height + 20;
+          const x = canvasPos.x - canvasWidth / 2;
+          const y = canvasPos.y - canvasHeight / 2;
+          ctx.strokeRect(x, y, canvasWidth, canvasHeight);
+        }
+
+        ctx.setLineDash([]);
+      }
 
       // Gradient background
       const gradient = ctx.createRadialGradient(
@@ -406,6 +453,22 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     });
   };
 
+  // const handleFinishEditingTag = () => {
+  //   if (draggedTag && onBulkTagUpdate) {
+  //     // Use bulk update instead of single update
+  //     onBulkTagUpdate(draggedTag);
+  //   } else if (resizingTag && onBulkTagUpdate) {
+  //     // Use bulk update for resized tags too
+  //     onBulkTagUpdate(resizingTag);
+  //   }
+    
+  //   // Reset editing state
+  //   setDraggedTag(null);
+  //   setResizingTag(null);
+  //   setResizeHandle(null);
+  //   setIsEditingTag(false);
+  // };
+
   // Updated to only show specific selected path in preview/published modes
   const drawAnimatedPaths = (ctx: CanvasRenderingContext2D, paths: Path[]) => {
     // In preview/published mode, only show the selected path
@@ -493,7 +556,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
     if (points.length > 1) {
       ctx.strokeStyle = color;
-      ctx.lineWidth = isAnimated ? 6 : 3;
+      ctx.lineWidth = isAnimated ? 3 : 1;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
 
@@ -569,7 +632,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
 
-    const time = Date.now() * 0.005;
+    const time = Date.now() * 0.0005; // Adjust speed of animation
 
     for (let i = 0; i < points.length - 1; i++) {
       const start = points[i];
@@ -594,9 +657,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(8, 0);
-        ctx.lineTo(-4, -4);
-        ctx.lineTo(-4, 4);
+        ctx.moveTo(12, 0);
+        ctx.lineTo(-7, -7);
+        ctx.lineTo(-7, 7);
         ctx.closePath();
         ctx.fill();
 
@@ -822,12 +885,15 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         y: relativeCoords.y,
       };
       onTagUpdate(updatedTag);
+      // setDraggedTag(updatedTag);
       return;
     }
 
     if (resizingTag && resizeHandle && onTagUpdate) {
       const relativeCoords = canvasToRelative(x, y);
       const tagPos = { x: resizingTag.x, y: resizingTag.y };
+
+      let updatedTag = { ...resizingTag };
 
       if (resizingTag.shape === "circle" && resizeHandle === "radius") {
         const distance = Math.sqrt(
@@ -840,9 +906,10 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       } else if (resizingTag.shape === "rectangle") {
         const dx = Math.abs(relativeCoords.x - tagPos.x) * 2;
         const dy = Math.abs(relativeCoords.y - tagPos.y) * 2;
-        const updatedTag = { ...resizingTag, width: dx, height: dy };
+        // const updatedTag = { ...resizingTag, width: dx, height: dy };
         onTagUpdate(updatedTag);
       }
+      // setResizingTag(updatedTag);
       return;
     }
 
@@ -857,6 +924,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     }
   };
 
+
   const handleMouseUp = () => {
     if (
       isDrawingShape &&
@@ -870,33 +938,35 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         currentShapeEnd.x,
         currentShapeEnd.y
       );
-
+  
       if (isVerticalTagMode) {
         // Create vertical connector shape
         let shapeData: Omit<
           VerticalConnector,
           "id" | "name" | "type" | "sharedId" | "createdAt"
         >;
-
+  
         if (selectedShapeType === "circle") {
           const radius =
             Math.sqrt(
               (currentShapeEnd.x - shapeStart.x) ** 2 +
                 (currentShapeEnd.y - shapeStart.y) ** 2
             ) / canvasSize.width;
+          
           shapeData = {
             shape: "circle",
             x: relativeStart.x,
             y: relativeStart.y,
             radius,
             floorId: "", // Will be set by parent component
+            // Add any other required properties for VerticalConnector
           };
         } else {
           const width = Math.abs(relativeEnd.x - relativeStart.x);
           const height = Math.abs(relativeEnd.y - relativeStart.y);
           const centerX = (relativeStart.x + relativeEnd.x) / 2;
           const centerY = (relativeStart.y + relativeEnd.y) / 2;
-
+  
           shapeData = {
             shape: "rectangle",
             x: centerX,
@@ -904,45 +974,63 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             width,
             height,
             floorId: "", // Will be set by parent component
+            // Add any other required properties for VerticalConnector
           };
         }
-
+  
         onVerticalShapeDrawn(shapeData);
       } else {
         // Create regular tag shape
         let shapeData: Omit<TaggedLocation, "id" | "name" | "category">;
-
+  
         if (selectedShapeType === "circle") {
           const radius =
             Math.sqrt(
               (currentShapeEnd.x - shapeStart.x) ** 2 +
                 (currentShapeEnd.y - shapeStart.y) ** 2
             ) / canvasSize.width;
+          
           shapeData = {
             shape: "circle",
             x: relativeStart.x,
             y: relativeStart.y,
             radius,
+            // Add other required TaggedLocation properties
+            floorId: "", // Will be set by parent component
+            logoUrl: "",
+            color: "#f59e0b", // Default color
+            textColor: "#000000", // Default text color
+            isPublished: false,
+            description: "",
+            // Remove width and height for circle
           };
         } else {
           const width = Math.abs(relativeEnd.x - relativeStart.x);
           const height = Math.abs(relativeEnd.y - relativeStart.y);
           const centerX = (relativeStart.x + relativeEnd.x) / 2;
           const centerY = (relativeStart.y + relativeEnd.y) / 2;
-
+  
           shapeData = {
             shape: "rectangle",
             x: centerX,
             y: centerY,
             width,
             height,
+            // Add other required TaggedLocation properties
+            floorId: "", // Will be set by parent component
+            logoUrl: "",
+            color: "#f59e0b", // Default color
+            textColor: "#000000", // Default text color
+            isPublished: false,
+            description: "",
+            // Remove radius for rectangle
           };
         }
-
+  
         onShapeDrawn(shapeData);
       }
     }
-
+  
     setIsDrawingShape(false);
     setShapeStart(null);
     setCurrentShapeEnd(null);
@@ -953,6 +1041,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     setDraggedDotIndex(null);
   };
 
+  
   const getCursorStyle = () => {
     if (isTagMode || isVerticalTagMode) {
       if (draggedTag) return "cursor-grabbing";
