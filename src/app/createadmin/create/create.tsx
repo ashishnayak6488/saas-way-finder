@@ -20,20 +20,20 @@ interface Organization {
   updated_by?: string;
   users?: any[]|unknown[];
   admins?: any[]|unknown[];
-  maxLimit?: {
-    screen: number;
-    content: number;
-    playlist: number;
-    group: number;
-    organization: number;
-  };
-  currentLimit?: {
-    screen: number;
-    content: number;
-    playlist: number;
-    group: number;
-    organization: number;
-  };
+  // maxLimit?: {
+  //   screen: number;
+  //   content: number;
+  //   playlist: number;
+  //   group: number;
+  //   organization: number;
+  // };
+  // currentLimit?: {
+  //   screen: number;
+  //   content: number;
+  //   playlist: number;
+  //   group: number;
+  //   organization: number;
+  // };
 }
 
 interface User {
@@ -55,12 +55,12 @@ interface OrgData {
   address_id: number | string;
   created_by: string;
   updated_by: string;
-  numberOfScreen: {
-    screen: number | string;
-    content: number | string;
-    playlist: number | string;
-    group: number | string;
-  };
+  // numberOfScreen: {
+  //   screen: number | string;
+  //   content: number | string;
+  //   playlist: number | string;
+  //   group: number | string;
+  // };
 }
 
 interface UserData {
@@ -107,12 +107,12 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({
     address_id: "",
     created_by: "",
     updated_by: "",
-    numberOfScreen: {
-      screen: "",
-      content: "",
-      playlist: "",
-      group: "",
-    },
+    // numberOfScreen: {
+    //   screen: "",
+    //   content: "",
+    //   playlist: "",
+    //   group: "",
+    // },
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<Errors>({});
@@ -125,69 +125,69 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({
     }
   };
 
-  const handleLimitChange =
-    (key: keyof OrgData["numberOfScreen"]) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value === "" ? "" : parseInt(e.target.value, 10);
-      setOrgData((prev) => ({
-        ...prev,
-        numberOfScreen: {
-          ...prev.numberOfScreen,
-          [key]: value,
-        },
-      }));
-      if (errors[`limit_${key}`]) {
-        setErrors((prev) => ({ ...prev, [`limit_${key}`]: null }));
-      }
-    };
+  // const handleLimitChange =
+  //   (key: keyof OrgData["numberOfScreen"]) =>
+  //   (e: React.ChangeEvent<HTMLInputElement>) => {
+  //     const value = e.target.value === "" ? "" : parseInt(e.target.value, 10);
+  //     setOrgData((prev) => ({
+  //       ...prev,
+  //       numberOfScreen: {
+  //         ...prev.numberOfScreen,
+  //         [key]: value,
+  //       },
+  //     }));
+  //     if (errors[`limit_${key}`]) {
+  //       setErrors((prev) => ({ ...prev, [`limit_${key}`]: null }));
+  //     }
+  //   };
 
-  const validateLimits = (): boolean => {
-    const newErrors: Errors = {};
-    let isValid = true;
+  // const validateLimits = (): boolean => {
+  //   const newErrors: Errors = {};
+  //   let isValid = true;
 
-    if (!orgData.name.trim()) {
-      newErrors.name = "Organization name is required";
-      isValid = false;
-    }
+  //   if (!orgData.name.trim()) {
+  //     newErrors.name = "Organization name is required";
+  //     isValid = false;
+  //   }
 
-    if (parentOrg) {
-      const limitFields: (keyof OrgData["numberOfScreen"] | "organization")[] =
-        ["screen", "content", "playlist", "group", "organization"];
+  //   if (parentOrg) {
+  //     const limitFields: (keyof OrgData["numberOfScreen"] | "organization")[] =
+  //       ["screen", "content", "playlist", "group", "organization"];
 
-      limitFields.forEach((field) => {
-        const requestedLimit =
-          field === "organization"
-            ? 1 // Creating one organization
-            : (orgData.numberOfScreen[
-                field as keyof OrgData["numberOfScreen"]
-              ] as number) || 0;
-        const parentMaxLimit = parentOrg.maxLimit?.[field] || 0;
-        const parentCurrentLimit = parentOrg.currentLimit?.[field] || 0;
-        const remainingLimit = parentMaxLimit - parentCurrentLimit;
+  //     limitFields.forEach((field) => {
+  //       const requestedLimit =
+  //         field === "organization"
+  //           ? 1 // Creating one organization
+  //           : (orgData.numberOfScreen[
+  //               field as keyof OrgData["numberOfScreen"]
+  //             ] as number) || 0;
+  //       const parentMaxLimit = parentOrg.maxLimit?.[field] || 0;
+  //       const parentCurrentLimit = parentOrg.currentLimit?.[field] || 0;
+  //       const remainingLimit = parentMaxLimit - parentCurrentLimit;
 
-        if (requestedLimit > remainingLimit) {
-          newErrors[
-            `limit_${field}`
-          ] = `Exceeds available ${field} limit. Maximum available: ${remainingLimit}`;
-          isValid = false;
-        }
+  //       if (requestedLimit > remainingLimit) {
+  //         newErrors[
+  //           `limit_${field}`
+  //         ] = `Exceeds available ${field} limit. Maximum available: ${remainingLimit}`;
+  //         isValid = false;
+  //       }
 
-        if (requestedLimit < 0) {
-          newErrors[`limit_${field}`] = `${field} limit cannot be negative`;
-          isValid = false;
-        }
-      });
-    }
+  //       if (requestedLimit < 0) {
+  //         newErrors[`limit_${field}`] = `${field} limit cannot be negative`;
+  //         isValid = false;
+  //       }
+  //     });
+  //   }
 
-    setErrors(newErrors);
-    return isValid;
-  };
+  //   setErrors(newErrors);
+  //   return isValid;
+  // };
 
   const handleCreateOrganization = async () => {
-    if (!validateLimits()) {
-      toast.error("Please correct the errors in the form");
-      return;
-    }
+    // if (!validateLimits()) {
+    //   toast.error("Please correct the errors in the form");
+    //   return;
+    // }
 
     setIsLoading(true);
     try {
@@ -196,23 +196,23 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({
         headcount: orgData.headcount
           ? parseInt(orgData.headcount as string)
           : null,
-        address_id: orgData.address_id
-          ? parseInt(orgData.address_id as string)
-          : null,
-        numberOfScreen: {
-          screen: orgData.numberOfScreen.screen
-            ? parseInt(orgData.numberOfScreen.screen as string)
-            : 0,
-          content: orgData.numberOfScreen.content
-            ? parseInt(orgData.numberOfScreen.content as string)
-            : 0,
-          playlist: orgData.numberOfScreen.playlist
-            ? parseInt(orgData.numberOfScreen.playlist as string)
-            : 0,
-          group: orgData.numberOfScreen.group
-            ? parseInt(orgData.numberOfScreen.group as string)
-            : 0,
-        },
+        // address_id: orgData.address_id
+        //   ? parseInt(orgData.address_id as string)
+        //   : null,
+        // numberOfScreen: {
+        //   screen: orgData.numberOfScreen.screen
+        //     ? parseInt(orgData.numberOfScreen.screen as string)
+        //     : 0,
+        //   content: orgData.numberOfScreen.content
+        //     ? parseInt(orgData.numberOfScreen.content as string)
+        //     : 0,
+        //   playlist: orgData.numberOfScreen.playlist
+        //     ? parseInt(orgData.numberOfScreen.playlist as string)
+        //     : 0,
+        //   group: orgData.numberOfScreen.group
+        //     ? parseInt(orgData.numberOfScreen.group as string)
+        //     : 0,
+        // },
         parent_uuid: parentOrg?.entity_uuid,
       };
 
@@ -314,7 +314,7 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({
                 onChange={handleChange}
                 placeholder="Description (Optional)"
               />
-              <div className="mt-4">
+              {/* <div className="mt-4">
                 <h3 className="text-sm font-medium mb-2">Resource Limits</h3>
                 {parentOrg && (
                   <div className="mb-3 p-3 bg-blue-50 rounded-md text-xs text-blue-700 flex items-start">
@@ -365,7 +365,7 @@ export const CreateOrganization: React.FC<CreateOrganizationProps> = ({
                     )
                   )}
                 </div>
-              </div>
+              </div> */}
               <div className="flex justify-between space-x-2 pt-4">
                 <Button
                   variant="secondary"

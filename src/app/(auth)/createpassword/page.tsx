@@ -190,7 +190,7 @@ const CreateNewPasswordPage: React.FC = () => {
           variant="primary"
           className="w-full"
           disabled={isLoading}
-          size="default"
+          size="sm"
           fullWidth={true}
         >
           {isLoading ? "Creating Password..." : "Create Password"}

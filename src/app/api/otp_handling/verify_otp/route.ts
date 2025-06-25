@@ -6,10 +6,9 @@ interface ErrorResponse {
 }
 
 interface VerifyOtpRequest {
-  email?: string;
-  phone?: string;
-  phoneNumber?: string;
+  identifier?: string;
   otp: string;
+  type?: 'email' | 'phone';
   otpCode?: string;
 }
 
@@ -23,11 +22,11 @@ interface ApiResponse {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { email, phone, phoneNumber, otp, otpCode }: VerifyOtpRequest = await request.json();
 
-    console.log("Received verification data:", { email, phone: phone || phoneNumber, otp: otp || otpCode });
+    const {identifier, otp, type, otpCode }: VerifyOtpRequest = await request.json();
+
+    console.log("Received verification data:", { identifier, type, otp: otp || otpCode });
     
-    const phoneNum = phone || phoneNumber;
     const otpValue = otp || otpCode;
     
     if (!otpValue) {
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (!email && !phoneNum) {
+    if (!identifier) {
       return NextResponse.json(
         { message: "Either email or phone number is required" } as ErrorResponse,
         { status: 400 }
@@ -53,15 +52,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Prepare request body based on whether it's email or phone verification
-    const requestBody: { email?: string; phone?: string; otp: string } = {
+    const requestBody: { identifier?: string; otp: string, type?: string } = {
       otp: otpValue
     };
 
-    if (email) {
-      requestBody.email = email;
-    } else if (phoneNum) {
-      requestBody.phone = phoneNum;
-    }
+ 
+    requestBody.identifier = identifier
+    requestBody.type = type;
+    
 
     const response: Response = await fetch(`${apiUrl}/verify-otp`, {
       method: 'POST',

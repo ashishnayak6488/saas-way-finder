@@ -178,7 +178,7 @@ const ResetPasswordForm: React.FC = () => {
             variant="primary"
             className="w-full"
             disabled={isSubmitting}
-            size="default"
+            size="sm"
             fullWidth={true}
           >
             {isSubmitting ? (

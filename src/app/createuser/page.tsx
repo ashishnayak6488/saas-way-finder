@@ -32,14 +32,6 @@ interface Organization {
   entity_key: string;
   address: string;
   description: string;
-  current_content: number;
-  current_playlist: number;
-  current_group: number;
-  current_screen: number;
-  max_screen: number;
-  max_content: number;
-  max_playlist: number;
-  max_group: number;
   maintainer_users: User[];
   admins: User[];
 }
@@ -268,7 +260,7 @@ const Page: React.FC = () => {
 
                   {expandedOrg === org.id && (
                     <div className="p-4 sm:p-6 border-t border-gray-200">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="bg-gray-50 p-3 rounded-md">
                           <p className="text-sm text-gray-500 mb-1">
                             Remaining Contents
@@ -305,7 +297,7 @@ const Page: React.FC = () => {
                             {org.max_group}
                           </p>
                         </div>
-                      </div>
+                      </div> */}
                       <div className="flex flex-col sm:flex-row sm:justify-between gap-4 mb-6 p-4 sm:p-6 border-t border-gray-200">
                         <Button
                           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
@@ -393,7 +385,7 @@ const Page: React.FC = () => {
                                   </td>
                                   <td className="p-3 text-sm text-gray-700">
                                     <BadgeHelp
-                                      title="Request Reset Password"
+                                      // title="Request Reset Password"
                                       size={16}
                                       className="cursor-pointer text-blue-500 hover:text-blue-700"
                                       onClick={() =>
@@ -406,7 +398,7 @@ const Page: React.FC = () => {
                                   </td>
                                   <td className="p-3">
                                     <div className="flex justify-center gap-3">
-                                      <button
+                                      {/* <button
                                         className="p-1 hover:bg-blue-100 rounded-full transition-colors"
                                         title="Edit User"
                                         onClick={(e) => {
@@ -418,7 +410,7 @@ const Page: React.FC = () => {
                                           size={18}
                                           className="text-blue-500 hover:text-blue-700"
                                         />
-                                      </button>
+                                      </button> */}
                                       <button
                                         className="p-1 hover:bg-red-100 rounded-full transition-colors"
                                         title="Delete User"

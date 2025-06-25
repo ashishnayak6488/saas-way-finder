@@ -9,14 +9,6 @@ interface Organization {
   entity_key: string;
   address: string;
   description: string;
-  current_content: number;
-  current_playlist: number;
-  current_group: number;
-  current_screen: number;
-  max_screen: number;
-  max_content: number;
-  max_playlist: number;
-  max_group: number;
   maintainer_users: User[];
   admins: User[];
 }
@@ -34,21 +26,71 @@ interface UserData {
   email: string;
 }
 
+// export const fetchOrganizations = async (): Promise<Organization[]> => {
+//   try {
+//     const response = await fetch("/api/organization/getAllMaintainer", {
+//       method: "GET",
+//       headers: {
+//         Accept: "application/json",
+//       },
+//       credentials: "include",
+//     });
+
+//     if (!response.ok) {
+//       throw new Error("Failed to fetch organizations");
+//     }
+
+//     const data = await response.json();
+//     return Array.isArray(data.entities)
+//       ? data.entities.map((org: any) => ({
+//           id: org.entity_uuid,
+//           entity_name: org.entity_name || "",
+//           entity_type: org.entity_type || "",
+//           entity_key: org.entity_key || "",
+//           address: org.address || "No address specified",
+//           description: org.description || "No description specified",
+//           maintainer_users: org.maintainer_users || [],
+//           admins: org.admins || [],
+//         }))
+//       : [];
+//   } catch (error: any) {
+//     toast.error(`Error fetching organizations: ${error.message || "An unexpected error occurred"}`);
+//     return [];
+//   }
+// };
+
+
+
 export const fetchOrganizations = async (): Promise<Organization[]> => {
   try {
+    console.log("Fetching organizations from API...");
+    
     const response = await fetch("/api/organization/getAllMaintainer", {
       method: "GET",
       headers: {
         Accept: "application/json",
+        "Content-Type": "application/json",
       },
       credentials: "include",
     });
 
+    console.log("Response status:", response.status);
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      throw new Error("Failed to fetch organizations");
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (parseError) {
+        console.error("Failed to parse error response:", parseError);
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
+    console.log("Received data:", data);
+    
     return Array.isArray(data.entities)
       ? data.entities.map((org: any) => ({
           id: org.entity_uuid,
@@ -57,19 +99,12 @@ export const fetchOrganizations = async (): Promise<Organization[]> => {
           entity_key: org.entity_key || "",
           address: org.address || "No address specified",
           description: org.description || "No description specified",
-          current_content: org.currentLimit?.content || 0,
-          current_playlist: org.currentLimit?.playlist || 0,
-          current_group: org.currentLimit?.group || 0,
-          current_screen: org.currentLimit?.screen || 0,
-          max_screen: org.maxLimit?.screen || 0,
-          max_content: org.maxLimit?.content || 0,
-          max_playlist: org.maxLimit?.playlist || 0,
-          max_group: org.maxLimit?.group || 0,
           maintainer_users: org.maintainer_users || [],
           admins: org.admins || [],
         }))
       : [];
   } catch (error: any) {
+    console.error("fetchOrganizations error:", error);
     toast.error(`Error fetching organizations: ${error.message || "An unexpected error occurred"}`);
     return [];
   }

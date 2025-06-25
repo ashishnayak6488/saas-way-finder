@@ -92,6 +92,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
   };
 
   const handleVerifyOtp = async (): Promise<void> => {
+
+    debugger;
     if (!otp.trim()) {
       setError("Please enter the OTP");
       return;
@@ -99,6 +101,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 
     setIsVerifyingOtp(true);
     setError("");
+
+    console.log("Verifying OTP for", value, "with OTP", otp, "and type", type);
 
     try {
       const response = await fetch("/api/otp_handling/verify_otp", {

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       domain: orgData.domain || "",
       parent_uuid: orgData.parent_uuid,
       address_id: orgData.address_id || 0,
-      maxLimit: orgData.numberOfScreen ?? 0,
+      // maxLimit: orgData.numberOfScreen ?? 0,
     };
 
     console.log("Data to send to backend:", dataToSend);
@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     console.log("Making request to backend with token");
 
@@ -60,8 +59,6 @@ export async function POST(req: NextRequest) {
         signal: controller.signal,
       }
     );
-
-    clearTimeout(timeoutId);
 
     const responseText = await response.text();
     let data;

@@ -91,7 +91,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* Main Navigation Section */}
       <div className="p-4 flex-1">
         <div

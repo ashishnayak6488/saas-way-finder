@@ -1,9 +1,13 @@
 import { NextResponse, NextRequest } from 'next/server';
-// import { getAuthToken } from "@/middleware";
+import { getAuthToken } from "@/middleware";
 
 // Define the auth token type
 interface AuthToken {
   access_token: string;
+}
+
+interface ErrorResponse {
+  message: string;
 }
 
 // Define the API response type
@@ -26,22 +30,20 @@ class ApiError extends Error {
 }
 
 // Assume getAuthToken returns a Promise<AuthToken | null>
-declare function getAuthToken(): Promise<AuthToken | null>;
+// declare function getAuthToken(): Promise<AuthToken | null>;
 
-export async function GET() {
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const controller = new AbortController();
   try {
     // Get auth token
-    const token = await getAuthToken();
-    if (!token || !token.access_token) {
+    const token: string | null = await getAuthToken(request);
+
+    if (!token) {
       return NextResponse.json(
-        { message: 'Unauthorized: Token missing or invalid' },
+        { message: "Unauthorized: Token missing" } as ErrorResponse,
         { status: 401 }
       );
     }
-
-    // Configure AbortController with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     // Make API request
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -54,14 +56,11 @@ export async function GET() {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
       credentials: 'include',
       signal: controller.signal,
     });
-
-    // Clear timeout on response
-    clearTimeout(timeoutId);
 
     const data: ApiResponse = await response.json();
 
