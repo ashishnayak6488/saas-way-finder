@@ -156,13 +156,62 @@ export const getVerticalConnectorsByBuildingId = async (
   }
 };
 
-// Get vertical connectors by shared ID
+
+
+// export const getVerticalConnectorsBySharedId = async (
+//   sharedId: string
+// ): Promise<VerticalConnectorData[]> => {
+//   try {
+//     // FIXED: Correct URL to match your API route
+//     const response = await fetch(`/api/verticalConnector/getVerticalConnectorsBySharedId?shared_id=${sharedId}`, {
+//       method: 'GET',
+//       credentials: 'include',
+//     });
+
+//     const responseText = await response.text();
+
+//     if (!response.ok) {
+//       let errorData;
+//       try {
+//         errorData = JSON.parse(responseText);
+//         console.error('Failed to fetch shared vertical connectors:', errorData.detail || errorData.error);
+//       } catch (e) {
+//         console.error('Failed to fetch shared vertical connectors:', responseText);
+//       }
+//       return [];
+//     }
+
+//     const result = JSON.parse(responseText);
+//     return result.data || [];
+//   } catch (error) {
+//     console.error('Error fetching shared vertical connectors:', error);
+//     return [];
+//   }
+// };
+
+
 export const getVerticalConnectorsBySharedId = async (
-  sharedId: string
+  sharedId: string,
+  buildingId?: string,
+  isPublished?: boolean,
+  includeInactive: boolean = false
 ): Promise<VerticalConnectorData[]> => {
   try {
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    queryParams.append('shared_id', sharedId);
     
-    const response = await fetch(`/api/verticalConnector/getVerticalConnectorByShareId?shared_id=${sharedId}`, {
+    if (buildingId) {
+      queryParams.append('building_id', buildingId);
+    }
+    
+    if (isPublished !== undefined) {
+      queryParams.append('is_published', isPublished.toString());
+    }
+    
+    queryParams.append('include_inactive', includeInactive.toString());
+
+    const response = await fetch(`/api/verticalConnector/getVerticalConnectorsBySharedId?${queryParams.toString()}`, {
       method: 'GET',
       credentials: 'include',
     });
@@ -181,12 +230,21 @@ export const getVerticalConnectorsBySharedId = async (
     }
 
     const result = JSON.parse(responseText);
+    
+    // Handle the response structure from your FastAPI
+    if (result.data && Array.isArray(result.data)) {
+      return result.data; // This should be the connectors array
+    }
+    
+    // Fallback for different response structure
     return result.data || [];
   } catch (error) {
     console.error('Error fetching shared vertical connectors:', error);
     return [];
   }
 };
+
+
 
 export const updateVerticalConnector = async (
   connectorId: string,
@@ -345,6 +403,8 @@ export const convertVerticalConnectorDataToFrontend = (backendData: VerticalConn
     color: backendData.color,
     floorId: backendData.floor_id,
     createdAt: new Date(backendData.datetime * 1000).toISOString(),
+    isPublished: backendData.is_published,
+    status: backendData.status
   };
 };
 

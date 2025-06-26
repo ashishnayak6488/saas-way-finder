@@ -9,6 +9,35 @@ interface Point {
   y: number;
 }
 
+interface PathSegment {
+  id: string;
+  floorId: string;
+  points: Point[];
+  connectorId?: string;
+}
+
+interface VerticalTransition {
+  from_floor_id: string;
+  to_floor_id: string;
+  connector_id: string;
+  connector_type: string;
+  connector_name?: string;
+  instruction?: string;
+}
+
+// interface Path {
+//   id: string;
+//   name: string;
+//   source: string;
+//   destination: string;
+//   points: Point[];
+//   isPublished: boolean;
+//   sourceTagId?: string;
+//   destinationTagId?: string;
+//   color?: string; // Add color property
+// }
+
+
 interface Path {
   id: string;
   name: string;
@@ -18,8 +47,25 @@ interface Path {
   isPublished: boolean;
   sourceTagId?: string;
   destinationTagId?: string;
-  color?: string; // Add color property
+  floorId?: string;
+  color?: string;
+  isMultiFloor?: boolean;
+  segments?: PathSegment[];
+  sourceFloorId?: string;
+  destinationFloorId?: string;
+  buildingId?: string;
+  totalFloors?: number;
+  verticalTransitions?: VerticalTransition[];
+  estimatedTime?: number;
+  createdBy?: string;
+  datetime?: number;
+  updatedBy?: string;
+  updateOn?: number;
+  status?: string;
+  metadata?: Record<string, any>;
 }
+
+
 
 interface MapCanvasProps {
   imageUrl: string | null;
@@ -53,6 +99,11 @@ interface MapCanvasProps {
   selectedTagsForBulkEdit?: Set<string>; // New prop
   isBulkEditMode?: boolean; // New prop
   pendingBulkUpdates?: Map<string, Partial<TaggedLocation>>; // New prop
+
+  isCreatingMultiFloorPath?: boolean;
+  multiFloorSegmentCount?: number;
+  onVerticalConnectorClick?: (connector: VerticalConnector) => void;
+
 
   // onBulkTagUpdate?: (tag: TaggedLocation) => void; // Add this new prop for bulk 
 }
@@ -90,7 +141,9 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   selectedTagsForBulkEdit,
   isBulkEditMode,
   pendingBulkUpdates,
-  // onBulkTagUpdate,
+  isCreatingMultiFloorPath,
+  multiFloorSegmentCount,
+  onVerticalConnectorClick,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,6 +249,13 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
   };
 
   // Convert relative coordinates to canvas coordinates
+
+  // Add the missing handleVerticalConnectorClick function in MapCanvas
+const handleVerticalConnectorClick = (connector: VerticalConnector) => {
+  if (onVerticalConnectorClick) {
+    onVerticalConnectorClick(connector);
+  }
+};
   const relativeToCanvas = (relativeX: number, relativeY: number) => {
     return {
       x: relativeX * canvasSize.width,
@@ -231,13 +291,91 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     return () => window.removeEventListener("resize", handleResize);
   }, [imageNaturalSize]);
 
+  // const drawVerticalConnectors = (
+  //   ctx: CanvasRenderingContext2D,
+  //   connectors: VerticalConnector[]
+  // ) => {
+  //   connectors.forEach((connector) => {
+  //     const canvasPos = relativeToCanvas(connector.x, connector.y);
+
+  //     // Use connector color based on type
+  //     const connectorColor =
+  //       connector.type === "elevator"
+  //         ? "#9333ea"
+  //         : connector.type === "stairs"
+  //         ? "#059669"
+  //         : connector.type === "escalator"
+  //         ? "#dc2626"
+  //         : "#dc2626";
+
+  //     // Add glow effect if hovered during design mode
+  //     const isHovered = hoveredConnector?.id === connector.id;
+  //     const shouldGlow = isHovered && (isDesignMode || isEditMode);
+
+  //     if (shouldGlow) {
+  //       ctx.shadowColor = connectorColor;
+  //       ctx.shadowBlur = 15;
+  //       ctx.globalAlpha = 0.9;
+  //     }
+
+  //     ctx.strokeStyle = connectorColor;
+  //     ctx.fillStyle = `${connectorColor}4D`; // 30% opacity
+  //     ctx.lineWidth = shouldGlow ? 4 : 3;
+
+  //     if (connector.shape === "circle" && connector.radius) {
+  //       const canvasRadius = connector.radius * canvasSize.width;
+  //       ctx.beginPath();
+  //       ctx.arc(canvasPos.x, canvasPos.y, canvasRadius, 0, 2 * Math.PI);
+  //       ctx.fill();
+  //       ctx.stroke();
+  //     } else if (
+  //       connector.shape === "rectangle" &&
+  //       connector.width &&
+  //       connector.height
+  //     ) {
+  //       const canvasWidth = connector.width * canvasSize.width;
+  //       const canvasHeight = connector.height * canvasSize.height;
+  //       const x = canvasPos.x - canvasWidth / 2;
+  //       const y = canvasPos.y - canvasHeight / 2;
+
+  //       ctx.fillRect(x, y, canvasWidth, canvasHeight);
+  //       ctx.strokeRect(x, y, canvasWidth, canvasHeight);
+  //     }
+
+  //     // Reset shadow effects
+  //     if (shouldGlow) {
+  //       ctx.shadowBlur = 0;
+  //       ctx.globalAlpha = 1;
+  //     }
+
+  //     // Draw connector label with enhanced visibility during design mode
+  //     ctx.fillStyle = connectorColor;
+  //     ctx.font = shouldGlow ? "bold 14px sans-serif" : "bold 12px sans-serif";
+  //     ctx.textAlign = "center";
+  //     ctx.textBaseline = "middle";
+
+  //     if (shouldGlow) {
+  //       ctx.strokeStyle = "#ffffff";
+  //       ctx.lineWidth = 3;
+  //       ctx.strokeText(connector.name, canvasPos.x, canvasPos.y - 35);
+  //     }
+
+  //     ctx.fillText(
+  //       connector.name,
+  //       canvasPos.x,
+  //       canvasPos.y - (shouldGlow ? 35 : 30)
+  //     );
+  //   });
+  // };
+
+
   const drawVerticalConnectors = (
     ctx: CanvasRenderingContext2D,
     connectors: VerticalConnector[]
   ) => {
     connectors.forEach((connector) => {
       const canvasPos = relativeToCanvas(connector.x, connector.y);
-
+  
       // Use connector color based on type
       const connectorColor =
         connector.type === "elevator"
@@ -247,21 +385,21 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           : connector.type === "escalator"
           ? "#dc2626"
           : "#dc2626";
-
+  
       // Add glow effect if hovered during design mode
       const isHovered = hoveredConnector?.id === connector.id;
       const shouldGlow = isHovered && (isDesignMode || isEditMode);
-
+  
       if (shouldGlow) {
         ctx.shadowColor = connectorColor;
         ctx.shadowBlur = 15;
         ctx.globalAlpha = 0.9;
       }
-
+  
       ctx.strokeStyle = connectorColor;
       ctx.fillStyle = `${connectorColor}4D`; // 30% opacity
       ctx.lineWidth = shouldGlow ? 4 : 3;
-
+  
       if (connector.shape === "circle" && connector.radius) {
         const canvasRadius = connector.radius * canvasSize.width;
         ctx.beginPath();
@@ -277,29 +415,29 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
         const canvasHeight = connector.height * canvasSize.height;
         const x = canvasPos.x - canvasWidth / 2;
         const y = canvasPos.y - canvasHeight / 2;
-
+  
         ctx.fillRect(x, y, canvasWidth, canvasHeight);
         ctx.strokeRect(x, y, canvasWidth, canvasHeight);
       }
-
+  
       // Reset shadow effects
       if (shouldGlow) {
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
       }
-
+  
       // Draw connector label with enhanced visibility during design mode
       ctx.fillStyle = connectorColor;
       ctx.font = shouldGlow ? "bold 14px sans-serif" : "bold 12px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-
+  
       if (shouldGlow) {
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 3;
         ctx.strokeText(connector.name, canvasPos.x, canvasPos.y - 35);
       }
-
+  
       ctx.fillText(
         connector.name,
         canvasPos.x,
@@ -307,6 +445,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       );
     });
   };
+
 
   const drawTags = (ctx: CanvasRenderingContext2D, tags: TaggedLocation[]) => {
     tags.forEach((tag) => {
@@ -1266,6 +1405,12 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           </button>
         </div>
       )}
+      {isCreatingMultiFloorPath && (
+  <div className="absolute top-4 right-4 bg-blue-100 border border-blue-300 rounded-lg p-2 text-sm">
+    <div className="font-medium text-blue-800">Multi-Floor Path</div>
+    <div className="text-blue-600">Segment: {multiFloorSegmentCount || 1}</div>
+  </div>
+)}
     </div>
   );
 };

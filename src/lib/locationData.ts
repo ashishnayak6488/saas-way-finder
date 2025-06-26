@@ -94,6 +94,26 @@ export interface BulkUpdateResponse {
 }
 
 
+// Add these interfaces at the top of the file
+export interface FloorWithLocations {
+  floor_id: string;
+  floor_name: string;
+  floor_number: number;
+  floor_plan_url?: string;
+  locations: LocationData[];
+  total_locations: number;
+}
+
+export interface BuildingLocationsResponse {
+  building_id: string;
+  building_name: string;
+  floors: FloorWithLocations[];
+  total_floors: number;
+  total_locations: number;
+}
+
+
+
 // Create a new location
 export const createLocation = async (locationData: CreateLocationRequest): Promise<LocationData | null> => {
   try {
@@ -475,6 +495,182 @@ export const bulkUpdateLocations = async (
   };
   
 
+
+//   // Add this function to get all locations by building ID
+// export const getAllLocationsByBuildingId = async (
+//   buildingId: string,
+//   floorId?: string,
+//   category?: string,
+//   isPublished?: boolean,
+//   includeInactive: boolean = false
+// ): Promise<LocationData[]> => {
+//   try {
+//     const params = new URLSearchParams();
+    
+//     if (floorId) params.append('floor_id', floorId);
+//     if (category) params.append('category', category);
+//     if (isPublished !== undefined) params.append('is_published', isPublished.toString());
+//     params.append('include_inactive', includeInactive.toString());
+
+//     const response = await fetch(`/api/location/getLocationsByBuildingId/${buildingId}?${params.toString()}`, {
+//       method: "GET",
+//       credentials: "include",
+//     });
+
+//     const responseText = await response.text();
+
+//     if (!response.ok) {
+//       let errorData;
+//       try {
+//         errorData = JSON.parse(responseText);
+//         console.error("Failed to fetch building locations:", errorData.error);
+//       } catch (e) {
+//         console.error("Failed to fetch building locations:", responseText);
+//       }
+//       return [];
+//     }
+
+//     const data = JSON.parse(responseText);
+    
+//     // Flatten all locations from all floors
+//     const allLocations: LocationData[] = [];
+//     if (data.data && data.data.floors) {
+//       data.data.floors.forEach((floor: FloorWithLocations) => {
+//         allLocations.push(...floor.locations);
+//       });
+//     }
+    
+//     return allLocations;
+//   } catch (error) {
+//     console.error("Error fetching building locations:", error);
+//     return [];
+//   }
+// };
+
+
+export const getAllLocationsByBuildingId = async (
+  buildingId: string,
+  floorId?: string,
+  category?: string,
+  isPublished?: boolean,
+  includeInactive: boolean = false
+): Promise<LocationData[]> => {
+  try {
+    const params = new URLSearchParams();
+    params.append('building_id', buildingId); // Add building_id as query param
+    
+    if (floorId) params.append('floor_id', floorId);
+    if (category) params.append('category', category);
+    if (isPublished !== undefined) params.append('is_published', isPublished.toString());
+    params.append('include_inactive', includeInactive.toString());
+
+    // Change the URL to use query parameters instead of path parameters
+    const response = await fetch(`/api/location/getLocationsByBuildingId?${params.toString()}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+        console.error("Failed to fetch building locations:", errorData.error);
+      } catch (e) {
+        console.error("Failed to fetch building locations:", responseText);
+      }
+      return [];
+    }
+
+    const data = JSON.parse(responseText);
+    
+    // Flatten all locations from all floors
+    const allLocations: LocationData[] = [];
+    if (data.data && data.data.floors) {
+      data.data.floors.forEach((floor: FloorWithLocations) => {
+        allLocations.push(...floor.locations);
+      });
+    }
+    
+    return allLocations;
+  } catch (error) {
+    console.error("Error fetching building locations:", error);
+    return [];
+  }
+};
+
+
+// Add this function to get building locations organized by floors
+export const getBuildingLocationsGrouped = async (
+  buildingId: string,
+  floorId?: string,
+  category?: string,
+  isPublished?: boolean,
+  includeInactive: boolean = false
+): Promise<BuildingLocationsResponse | null> => {
+  try {
+    const params = new URLSearchParams();
+    
+    if (floorId) params.append('floor_id', floorId);
+    if (category) params.append('category', category);
+    if (isPublished !== undefined) params.append('is_published', isPublished.toString());
+    params.append('include_inactive', includeInactive.toString());
+
+    const response = await fetch(`/api/location/building/${buildingId}?${params.toString()}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = JSON.parse(responseText);
+        console.error("Failed to fetch building locations grouped:", errorData.error);
+      } catch (e) {
+        console.error("Failed to fetch building locations grouped:", responseText);
+      }
+      return null;
+    }
+
+    const data = JSON.parse(responseText);
+    return data.data || null;
+  } catch (error) {
+    console.error("Error fetching building locations grouped:", error);
+    return null;
+  }
+};
+
+// Add helper function to find closest location from all building locations
+export const findClosestLocationInBuilding = (
+  point: { x: number; y: number },
+  buildingLocations: LocationData[],
+  floorId?: string,
+  threshold: number = 0.05
+): LocationData | null => {
+  // Filter by floor if specified
+  const relevantLocations = floorId 
+    ? buildingLocations.filter(loc => loc.floor_id === floorId)
+    : buildingLocations;
+  
+  let closestLocation: LocationData | null = null;
+  let minDistance = threshold;
+  
+  for (const location of relevantLocations) {
+    const distance = Math.sqrt(
+      Math.pow(location.x - point.x, 2) + Math.pow(location.y - point.y, 2)
+    );
+    
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestLocation = location;
+    }
+  }
+  
+  return closestLocation;
+};
 
 
 
